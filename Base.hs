@@ -245,8 +245,8 @@ pFromInt x | x <= 1 = One
 -- pApplyBinary f p1 p2 = f (pToInt p1) (pToInt p2)
 
 pless :: Positive -> Positive -> Bool
-pless One _ = True 
 pless _ One = False
+pless One _ = True 
 pless (PSucc a) (PSucc b) = pless a b
 
 psub :: Positive -> Positive -> Positive
@@ -265,6 +265,14 @@ pmul' :: Positive -> Positive -> Positive -> Positive
 pmul' One One acc = acc -- subtracting One
 pmul' One b acc = pmul' b One acc
 pmul' (PSucc a) b acc = pmul' a b (pplus acc b)
+
+pdiv :: Positive -> Positive -> Positive
+pdiv a b = pdiv' (psub a b) b One
+
+pdiv' :: Positive -> Positive -> Positive -> Positive
+pdiv' a One acc = pplus acc a
+pdiv' a b acc | pless a b = acc
+              | otherwise = pdiv' (psub a b) b (pplus acc One)
 
 data Integer = IZero
              | Plus Positive
@@ -323,12 +331,7 @@ zdiv a IZero = IZero
 zdiv IZero a = IZero
 zdiv (Minus a) b = znegate (zdiv (Plus a) b)
 zdiv a (Minus b) = znegate (zdiv a (Plus b))
-zdiv (Plus a) (Plus b) = zdiv' a b IZero
-
-zdiv' :: Positive -> Positive -> Integer -> Integer
-zdiv' a One acc = zplus acc (Plus a)
-zdiv' a b acc | pless a b = acc
-              | otherwise = zdiv' (psub a b) b (zplus acc (Plus One))
+zdiv (Plus a) (Plus b) = Plus (pdiv a b)
 
 -------------------------------------------
 -- Избавляемся от встроенных типов.
@@ -338,18 +341,25 @@ zdiv' a b acc | pless a b = acc
 -- Уникальность представления каждого числа не обязательна.
 
 data Rational = Rational Integer Positive
+    deriving Show
 
-zgcd :: Integer -> Integer -> Integer
-zgcd a IZero = a
-zgcd IZero b = b
-zgcd (Minus a) b = zgcd (Plus a) b
-zgcd a (Minus b) = zgcd a (Plus b)
-zgcd (Plus a) (Plus b) | pless a b = zgcd (Plus (psub b a)) (Plus a)
-                       | otherwise = zgcd (Plus (psub a b)) (Plus b)
+peq :: Positive -> Positive -> Bool
+peq One One = True
+peq One b = False
+peq a One = False
+peq (PSucc a) (PSucc b) = peq a b
+
+pgcd :: Positive -> Positive -> Positive
+pgcd a b | peq a b = a
+         | pless a b = pgcd a (psub b a)
+         | otherwise = pgcd b (psub a b) 
 
 rnorm :: Rational -> Rational
-rnorm (Rational i p) = rnorm (zdiv i divisor) (pdiv p divisor)
-                       where divisor = 
+rnorm (Rational IZero _) = Rational IZero One
+rnorm (Rational (Minus a) b) = Rational (Minus (pdiv a divisor)) (pdiv b divisor)
+                             where divisor = pgcd a b
+rnorm (Rational (Plus a) b) = Rational (Plus (pdiv a divisor)) (pdiv b divisor)
+                            where divisor = pgcd a b
 
 -- Реализуйте:
 -- * сложение
