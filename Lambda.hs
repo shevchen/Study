@@ -46,20 +46,40 @@ betaReduct :: Variable -> Term -> Term -> Term
 betaReduct var what term = case term of 
     Var v    -> subst var what term
     App t t' -> App (betaReduct var what t) (betaReduct var what t')
-    Abs v t  -> if v `elem` (free what) then Abs nn (betaReduct var what (subst v (Var nn) t)) else Abs v (betaReduct var what t)
+    Abs v t  -> if v == var then term else Abs nn (betaReduct var what (subst v (Var nn) t))
         where nn = newname ((free t) ++ (free what)) v
 
 -- Нормализация нормальным порядком терма term
 normal' :: Term -> Term
-normal' t = undefined
+normal' term = if res then normal' newterm else term
+    where (newterm, res) = normalstep term
+
+normalstep :: Term -> (Term, Bool)
+normalstep term = case term of
+    Var v            -> (term, False)
+    Abs v t          -> (Abs v newterm, res)
+        where (newterm, res) = normalstep t
+    App (Abs v t) t' -> (betaReduct v t' t, True)
+    App t t'         -> if res then (App newterm t', True) else if res2 then (App t newterm2, True) else (term, False)
+        where (newterm, res)   = normalstep t
+              (newterm2, res2) = normalstep t'
 
 -- Нормализация аппликативным порядком терма term
--- applicative' :: Term -> Term
--- applicative' term = ?
+applicative' :: Term -> Term
+applicative' term = if res then applicative' newterm else term
+    where (newterm, res) = applicativestep term
 
--- Эти строчки после реализации стереть
-applicative' :: Term -> Term 
-applicative' = undefined
+applicativestep :: Term -> (Term, Bool)
+applicativestep term = case term of
+    Var v            -> (term, False)
+    Abs v t          -> (Abs v newterm, res)
+        where (newterm, res) = applicativestep t
+    App (Abs v t) t' -> if res then (App (Abs v t) newterm, True) else if res2 then (App (Abs v newterm2) t', True) else (betaReduct v t' t, True)
+        where (newterm, res)   = applicativestep t'
+              (newterm2, res2) = applicativestep t
+    App t t'         -> if res then (App t newterm, True) else if res2 then (App newterm2 t', True) else (term, False)
+        where (newterm, res)   = applicativestep t'
+              (newterm2, res2) = applicativestep t
 
 -- Маркер конца ресурсов
 data TooLoong = TooLoong deriving Show
