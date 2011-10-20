@@ -1,6 +1,11 @@
 #!/bin/bash
 
 myvcs_init() {
+	if [ ! -f $1 ]
+	then
+		echo "$1: no such file."
+		return 1
+	fi
 	if [ -a ".$1" ]
 	then
 		rm -rf ".$1"
@@ -12,9 +17,15 @@ myvcs_init() {
 	f=".$1/backup"
 	touch $f
 	echo "Initialized."
+	return 0
 }
 
 myvcs_commit() {
+	if [ ! -f $1 ]
+	then
+		echo "$1: no such file."
+		return 1
+	fi
 	read cv < ".$1/version"
 	p=".$1/p$cv"
 	touch "$p"
@@ -24,9 +35,15 @@ myvcs_commit() {
 	echo $(($cv+1)) > $v
 	cat $1 > $f
 	echo "Committed."
+	return 0
 }
 
 myvcs_status() {
+	if [ ! -f $1 ]
+	then
+		echo "$1: no such file."
+		return 1
+	fi
 	f=".$1/backup"
 	b=`cmp "$1" ".$1/backup"`
 	if [ ${#b} -eq 0 ]
@@ -37,14 +54,26 @@ myvcs_status() {
 		echo "Old version."
 		return 1
 	fi
+	return 0
 }
 
 myvcs_diff() {
+	if [ ! -f $1 ]
+	then
+		echo "$1: no such file."
+		return 1
+	fi
 	f=".$1/backup"
 	/usr/bin/diff "$1" "$f"
+	return 0
 }
 
 myvcs_update() {
+	if [ ! -f $1 ]
+	then
+		echo "$1: no such file."
+		return 1
+	fi
 	f=".$1/backup"
 	rm "$1"
 	touch "$1"
@@ -53,6 +82,7 @@ myvcs_update() {
 		patch "$1" ".$1/p$i"
 	done
 	echo "Updated."
+	return 0
 }			
 
 case "$1" in
@@ -66,4 +96,6 @@ case "$1" in
 		myvcs_diff $2;;
 	"update" )
 		myvcs_update $2 $3;;
+	* )
+		echo "$1: no such command."
 esac
