@@ -28,7 +28,15 @@ commit() {
 
 status() {
 	f=".$1/backup"
-	return /usr/bin/diff "$1" "$f"
+	b=`cmp "$1" ".$1/backup"`
+	if [ ${#b} -eq 0 ]
+	then
+		echo "Latest version."
+		return 0
+	else
+		echo "Old version."
+		return 1
+	fi
 }
 
 diff() {
