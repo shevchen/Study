@@ -30,7 +30,7 @@ myvcs_commit() {
 	p=".$1/p$cv"
 	touch "$p"
 	f=".$1/backup"
-	/usr/bin/diff "$f" "$1" > "$p"
+	diff -u "$f" "$1" > "$p"
 	v=".$1/version"
 	echo $(($cv+1)) > $v
 	cat $1 > $f
@@ -64,7 +64,7 @@ myvcs_diff() {
 		return 1
 	fi
 	f=".$1/backup"
-	/usr/bin/diff "$1" "$f"
+	diff -u "$1" "$f"
 	return 0
 }
 
