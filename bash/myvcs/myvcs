@@ -1,0 +1,48 @@
+#!/bin/bash
+
+init() {
+	if [ -a ".$1" ]
+	then
+		rm -rf ".$1"
+	fi
+	mkdir ".$1"
+	v=".$1/version"
+	touch $v
+	echo "0" > $v
+	f=".$1/backup"
+	touch $f
+	echo "Initialized."
+}
+
+commit() {
+	read cv < ".$1/version"
+	p=".$1/p$cv"
+	touch "$p"
+	f=".$1/backup"
+	diff "$1" "$f" > "$p"
+	v=".$1/version"
+	echo $(($cv+1)) > $v
+	cat $1 > $f
+	echo "Committed."
+}
+
+status() {
+	f=".$1/backup"
+	return diff "$1" "$f"
+}
+
+diff() {
+	f=".$1/backup"
+	diff "$1" "$f"
+}
+
+update() {
+	f=".$1/backup"
+	rm "$1"
+	touch "$1"
+	for i in {0..$2}
+	do
+		patch -f "$1" "p$i"
+	done
+	echo "Updated."
+}			
