@@ -19,7 +19,7 @@ commit() {
 	p=".$1/p$cv"
 	touch "$p"
 	f=".$1/backup"
-	diff "$1" "$f" > "$p"
+	/usr/bin/diff "$f" "$1" > "$p"
 	v=".$1/version"
 	echo $(($cv+1)) > $v
 	cat $1 > $f
@@ -28,21 +28,21 @@ commit() {
 
 status() {
 	f=".$1/backup"
-	return diff "$1" "$f"
+	return /usr/bin/diff "$1" "$f"
 }
 
 diff() {
 	f=".$1/backup"
-	diff "$1" "$f"
+	/usr/bin/diff "$1" "$f"
 }
 
 update() {
 	f=".$1/backup"
 	rm "$1"
 	touch "$1"
-	for i in {0..$2}
+	for ((i=0;i<$2+1;i+=1));
 	do
-		patch -f "$1" "p$i"
+		patch "$1" ".$1/p$i"
 	done
 	echo "Updated."
 }			
