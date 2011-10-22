@@ -88,18 +88,14 @@ data TooLoong = TooLoong deriving Show
 -- Результат: Или числа итераций недостаточно, чтобы достичь нормальной
 -- формы. Или (число нерастраченных итераций, терм в нормальной форме).
 -- 
--- normal :: Int -> Term -> Either TooLoong (Int, Term)
--- normal n term = ?
-
--- Эту строчку после реализации стереть
-normal _ = normal'
+normal :: Int -> Term -> Either TooLoong (Int, Term)
+normal n term = if n < 0 then Left TooLoong else if res then normal (n - 1) newterm else Right (n, term)
+	where (newterm, res) = normalstep term
 
 -- (*) Аналогичная нормализация аппликативным порядком.
--- applicative :: Int -> Term -> Either TooLoong (Int, Term)
--- applicative n term = ?
-
--- Эту строчку после реализации стереть
-applicative _ = applicative'
+applicative :: Int -> Term -> Either TooLoong (Int, Term)
+applicative n term = if n < 0 then Left TooLoong else if res then applicative (n - 1) newterm else Right (n, term)
+	where (newterm, res) = applicativestep term
 
 -- (***) Придумайте и реализуйте обобщённую функцию, выражающую некоторое
 -- семейство стратегий редуцирования. В том смысле, что номальная, нормальная
