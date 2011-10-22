@@ -3,6 +3,7 @@ module Lambda where
 import Prelude hiding (iterate, (++), elem)
 
 type Variable = String
+type Varible = Variable
 
 -- Лямбда-терм
 data Term = Var Variable
@@ -48,6 +49,8 @@ betaReduct var what term = case term of
     App t t' -> App (betaReduct var what t) (betaReduct var what t')
     Abs v t  -> if v == var then term else Abs nn (betaReduct var what (subst v (Var nn) t))
         where nn = newname ((free t) ++ (free what)) v
+
+betaRecuct = betaReduct
 
 -- Нормализация нормальным порядком терма term
 normal' :: Term -> Term
