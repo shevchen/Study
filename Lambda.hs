@@ -48,7 +48,7 @@ betaReduct var what term = case term of
     Var v    -> subst var what term
     App t t' -> App (betaReduct var what t) (betaReduct var what t')
     Abs v t  -> if v == var then term else Abs nn (betaReduct var what (subst v (Var nn) t))
-        where nn = newname ((free t) ++ (free what)) v
+        where nn = newname ((free term) ++ (free what)) v
 
 betaRecuct = betaReduct
 
@@ -67,8 +67,10 @@ applicative' :: Term -> Term
 applicative' term = case term of
 	Var v            -> term
 	Abs v t          -> Abs v (applicative' t)
-	App (Abs v t) t' -> applicative' (betaReduct v (applicative' t') (applicative' t))
-	App t t'         -> applicative' (App (applicative' t) (applicative' t'))
+	App t t'         -> case (applicative' t) of
+		Var v   -> App (Var v) (applicative' t')
+		Abs v x -> applicative' (betaReduct v (applicative' t') x)
+		App x y -> App (App x y) (applicative' t')
 
 -- Маркер конца ресурсов
 data TooLoong = TooLoong deriving Show
@@ -101,16 +103,14 @@ applicative n term = if n < 0 then (Left TooLoong) else case term of
 	Abs v t          -> case (applicative n t) of
 		Left TooLoong       -> Left TooLoong
 		Right (resn, rest)  -> Right (resn, Abs v rest)
-	App (Abs v t) t' -> case (applicative n t) of
-		Left TooLoong       -> Left TooLoong
-		Right (resn, rest)  -> case (applicative resn t') of
-			Left TooLoong        -> Left TooLoong
-			Right (resn', rest') -> applicative (resn' - 1) (betaReduct v rest' rest)
 	App t t'         -> case (applicative n t) of
 		Left TooLoong -> Left TooLoong
 		Right (resn, rest)  -> case (applicative resn t') of
 			Left TooLoong  -> Left TooLoong
-			Right (resn', rest') -> applicative resn' (App rest rest')
+			Right (resn', rest') -> case rest of
+				Var v   -> Right (resn', App rest rest')
+				Abs v x -> applicative (resn' - 1) (betaReduct v rest' x)
+				App x y -> Right (resn', App rest rest')
 
 -- (***) Придумайте и реализуйте обобщённую функцию, выражающую некоторое
 -- семейство стратегий редуцирования. В том смысле, что номальная, нормальная
