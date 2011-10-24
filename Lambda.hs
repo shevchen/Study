@@ -81,33 +81,36 @@ normal :: Int -> Term -> Either TooLoong (Int, Term)
 normal n term = if n < 0 then (Left TooLoong) else case term of
 	Var v    -> Right (n, term)
 	Abs v t  -> case (normal n t) of
-		Left TooLoong -> Left TooLoong
-		(resn, rest)  -> Right (resn, Abs v rest)
-	App t t' -> case (normal t) of
-		Var v   -> case (normal n t') of
-			Left TooLoong -> Left TooLoong
-			(resn, rest)  -> Right (resn, App (Var v) rest)
-		Abs v x -> normal (n - 1) (betaReduct v t' x)
-		App x y -> case (normal n t') of
-			Left TooLoong -> Left TooLoong
-			(resn, rest)  -> Right (resn, App (App x y) rest)			
+		Left TooLoong       -> Left TooLoong
+		Right (resn, rest)  -> Right (resn, Abs v rest)
+	App t t' -> case (normal n t) of
+		Left TooLoong      -> Left TooLoong
+		Right (resn, rest) -> case rest of
+			Var v   -> case (normal resn t') of
+				Left TooLoong         -> Left TooLoong
+				Right (resn', rest')  -> Right (resn', App (Var v) rest')
+			Abs v x -> normal (n - 1) (betaReduct v t' x)
+			App x y -> case (normal resn t') of
+				Left TooLoong         -> Left TooLoong
+				Right (resn', rest')  -> Right (resn', App (App x y) rest')			
+
 -- (*) Аналогичная нормализация аппликативным порядком.
 applicative :: Int -> Term -> Either TooLoong (Int, Term)
 applicative n term = if n < 0 then (Left TooLoong) else case term of
 	Var v            -> Right (n, term)
 	Abs v t          -> case (applicative n t) of
-		Left TooLoong -> Left TooLoong
-		(resn, rest)  -> Right (resn, Abs v rest)
+		Left TooLoong       -> Left TooLoong
+		Right (resn, rest)  -> Right (resn, Abs v rest)
 	App (Abs v t) t' -> case (applicative n t) of
-		Left TooLoong -> Left TooLoong
-		(resn, rest)  -> case (applicative resn t') of
-			Left TooLoong  -> Left TooLoong
-			(resn', rest') -> applicative (resn' - 1) (betaReduct v rest' rest)
+		Left TooLoong       -> Left TooLoong
+		Right (resn, rest)  -> case (applicative resn t') of
+			Left TooLoong        -> Left TooLoong
+			Right (resn', rest') -> applicative (resn' - 1) (betaReduct v rest' rest)
 	App t t'         -> case (applicative n t) of
 		Left TooLoong -> Left TooLoong
-		(resn, rest)  -> case (applicative resn t') of
+		Right (resn, rest)  -> case (applicative resn t') of
 			Left TooLoong  -> Left TooLoong
-			(resn', rest') -> applicative resn' (App rest rest')
+			Right (resn', rest') -> applicative resn' (App rest rest')
 
 -- (***) Придумайте и реализуйте обобщённую функцию, выражающую некоторое
 -- семейство стратегий редуцирования. В том смысле, что номальная, нормальная
