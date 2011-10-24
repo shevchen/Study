@@ -69,20 +69,11 @@ normalstep term = case term of
 
 -- Нормализация аппликативным порядком терма term
 applicative' :: Term -> Term
-applicative' term = if res then applicative' newterm else term
-    where (newterm, res) = applicativestep term
-
-applicativestep :: Term -> (Term, Bool)
-applicativestep term = case term of
-    Var v            -> (term, False)
-    Abs v t          -> (Abs v newterm, res)
-        where (newterm, res) = applicativestep t
-    App (Abs v t) t' -> if res then (App (Abs v t) newterm, True) else if res2 then (App (Abs v newterm2) t', True) else (betaReduct v t' t, True)
-        where (newterm, res)   = applicativestep t'
-              (newterm2, res2) = applicativestep t
-    App t t'         -> if res then (App t newterm, True) else if res2 then (App newterm2 t', True) else (term, False)
-        where (newterm, res)   = applicativestep t'
-              (newterm2, res2) = applicativestep t
+applicative' term = case term of
+	Var v            -> term
+	Abs v t          -> Abs v (applicative' t)
+	App (Abs v t) t' -> applicative' (betaReduct v (applicative' t') (applicative' t))
+	App t t'         -> applicative' (App (applicative' t) (applicative' t'))
 
 -- Маркер конца ресурсов
 data TooLoong = TooLoong deriving Show
