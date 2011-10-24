@@ -54,18 +54,13 @@ betaRecuct = betaReduct
 
 -- Нормализация нормальным порядком терма term
 normal' :: Term -> Term
-normal' term = if res then normal' newterm else term
-    where (newterm, res) = normalstep term
-
-normalstep :: Term -> (Term, Bool)
-normalstep term = case term of
-    Var v            -> (term, False)
-    Abs v t          -> (Abs v newterm, res)
-        where (newterm, res) = normalstep t
-    App (Abs v t) t' -> (betaReduct v t' t, True)
-    App t t'         -> if res then (App newterm t', True) else if res2 then (App t newterm2, True) else (term, False)
-        where (newterm, res)   = normalstep t
-              (newterm2, res2) = normalstep t'
+normal' term = case term of
+	Var v    -> term
+	Abs v t  -> Abs v (normal' t)
+	App t t' -> case (normal' t) of
+		Var v   -> App (Var v) (normal' t')
+		Abs v x -> normal' (betaReduct v t' x)
+		App x y -> App (App x y) (normal' t')
 
 -- Нормализация аппликативным порядком терма term
 applicative' :: Term -> Term
@@ -83,13 +78,36 @@ data TooLoong = TooLoong deriving Show
 -- формы. Или (число нерастраченных итераций, терм в нормальной форме).
 -- 
 normal :: Int -> Term -> Either TooLoong (Int, Term)
-normal n term = if n < 0 then Left TooLoong else if res then normal (n - 1) newterm else Right (n, term)
-	where (newterm, res) = normalstep term
-
+normal n term = if n < 0 then (Left TooLoong) else case term of
+	Var v    -> Right (n, term)
+	Abs v t  -> case (normal n t) of
+		Left TooLoong -> Left TooLoong
+		(resn, rest)  -> Right (resn, Abs v rest)
+	App t t' -> case (normal t) of
+		Var v   -> case (normal n t') of
+			Left TooLoong -> Left TooLoong
+			(resn, rest)  -> Right (resn, App (Var v) rest)
+		Abs v x -> normal (n - 1) (betaReduct v t' x)
+		App x y -> case (normal n t') of
+			Left TooLoong -> Left TooLoong
+			(resn, rest)  -> Right (resn, App (App x y) rest)			
 -- (*) Аналогичная нормализация аппликативным порядком.
 applicative :: Int -> Term -> Either TooLoong (Int, Term)
-applicative n term = if n < 0 then Left TooLoong else if res then applicative (n - 1) newterm else Right (n, term)
-	where (newterm, res) = applicativestep term
+applicative n term = if n < 0 then (Left TooLoong) else case term of
+	Var v            -> Right (n, term)
+	Abs v t          -> case (applicative n t) of
+		Left TooLoong -> Left TooLoong
+		(resn, rest)  -> Right (resn, Abs v rest)
+	App (Abs v t) t' -> case (applicative n t) of
+		Left TooLoong -> Left TooLoong
+		(resn, rest)  -> case (applicative resn t') of
+			Left TooLoong  -> Left TooLoong
+			(resn', rest') -> applicative (resn' - 1) (betaReduct v rest' rest)
+	App t t'         -> case (applicative n t) of
+		Left TooLoong -> Left TooLoong
+		(resn, rest)  -> case (applicative resn t') of
+			Left TooLoong  -> Left TooLoong
+			(resn', rest') -> applicative resn' (App rest rest')
 
 -- (***) Придумайте и реализуйте обобщённую функцию, выражающую некоторое
 -- семейство стратегий редуцирования. В том смысле, что номальная, нормальная
