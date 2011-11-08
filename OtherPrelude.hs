@@ -55,7 +55,7 @@ dropWhile pred (x:xs) = if pred x then dropWhile pred xs else x:xs
 span :: (a -> Bool) -> [a] -> ([a], [a])
 span pred []     = ([], [])
 span pred (x:xs) = if pred x then (x:first, second) else ([x], xs)
-				   where (first, second) = span pred xs
+                   where (first, second) = span pred xs
 
 -- Разбить список по предикату на (takeWhile p xs, dropWhile p xs),
 -- но эффективнее
@@ -73,14 +73,21 @@ reverse :: [a] -> [a]
 reverse []     = []
 reverse (x:xs) = (reverse xs):[x]
 
+-- map f l = из первой лабораторной
+map :: (a -> b) -> [a] -> [b]
+map f []     = []
+map f (x:xs) = (f x):(map f xs)
+
 -- (*) Все подсписки данного списка
 subsequences :: [a] -> [[a]]
 subsequences [] = [[]]
-subsequences (x:xs) = ?
+subsequences (x:xs) = (map ((:) x) sub) ++ sub
+                      where sub = subsequences xs 
 
 -- (*) Все перестановки элементов данного списка
 permutations :: [a] -> [[a]]
-permutations = ?
+permutations [] = []
+permutations (x:xs) = ?
 
 -- Повторяет элемент бесконечное число раз
 repeat :: a -> [a]
@@ -132,17 +139,15 @@ scanr f z (x:xs) = (scanr f (f x z) xs):z
 
 finiteTimeTest = take 10 $ foldr (:) [] $ repeat 1
 
--- map f l = из первой лабораторной
-map f []     = []
-map f (x:xs) = (f x):(map f xs)
-
 -- Склеивает список списков в список
 concat :: [[a]] -> [a]
-concat l = ? 
+concat []     = []
+concat (x:xs) = x ++ (concat xs)
 
 -- Эквивалент (concat . map), но эффективнее
 concatMap :: (a -> [b]) -> [a] -> [b]
-concatMap = ?
+concatMap f []     = []
+concatMap f (x:xs) = (f x) ++ (concatMap f xs)
 
 -- Сплющить два списка в список пар длинны min (length a, length b)
 zip :: [a] -> [b] -> [(a, b)]
