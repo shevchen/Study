@@ -54,7 +54,7 @@ dropWhile pred (x:xs) = if pred x then dropWhile pred xs else x:xs
 -- Разбить список в пару (найбольший префикс удовлетворяющий p, всё остальное)
 span :: (a -> Bool) -> [a] -> ([a], [a])
 span pred []     = ([], [])
-span pred (x:xs) = if pred x then (x:first, second) else ([x], xs)
+span pred (x:xs) = if pred x then (x:first, second) else ([], x:xs)
                    where (first, second) = span pred xs
 
 -- Разбить список по предикату на (takeWhile p xs, dropWhile p xs),
@@ -136,10 +136,9 @@ foldr f z []     = z
 foldr f z (x:xs) = f x (foldr f z xs)
 
 -- Аналогично
--- head (scanr f z xs) == foldr f z xs.
+--  head (scanr f z xs) == foldr f z xs.
 scanr :: (a -> b -> b) -> b -> [a] -> [b]
-scanr f z []     = [z]
-scanr f z (x:xs) = (scanr f (f x z) xs):z
+scanr = ?
 
 finiteTimeTest = take 10 $ foldr (:) [] $ repeat 1
 
@@ -179,8 +178,16 @@ instance Monoid Integer where
     mappend = (+)
 
 data MulInteger = Mult Integer
+data MulRational = Mult Rational
 
-instance Monoid MulInteger where
+-- Реализуйте инстансы Monoid для Rational и MulRational
+instance Monoid Rational where
+    ?
+
+instance Monoid MulRational where
+    ?
+
+instange Monoid MulInteger where
     mzero = 1
     (Mult a) `mappend` (Mult b) = Mult $ a * b
 
@@ -208,7 +215,9 @@ mtfold (MNode a l r) = a `mappend` (mtfold l) `mappend` (mtfold r)
 -- констреинтах Monoid a быть не должно.
 -- Для широты фантазии в терме можно использовать классы типов, определённые в любом
 -- месте этого файла.
-mterm = ?
+mterm :: MTree a -> Integer
+mterm Mleaf = mzero
+mterm (MNode a t1 t2) = mterm t1 + mterm t2 + (if a == mzero then 0 else 1)
 
 -- (**) Разберитесь чем отличаются эти определения.
 -- "Скомпилируйте" их в наш гипотетический язык программирования с
@@ -219,24 +228,47 @@ instance MFoldable MTree where
 instance Monoid a => AMFoldable MTree a where
     amfold = mtfold
 
+--------- Тут переделаем немного
 -- Группа
-class Group a where
-    gzero :: a
-    ginv  :: a -> a
-    gmult :: a -> a -> a
+--class Group a where
+--    gzero :: a
+--    ginv  :: a -> a
+--    gmult :: a -> a -> a
+--
+--class Group Integer where
+--    gzero = 0
+--    ginv a = -a
+--    gmult = (+)
+--
+--class Group MulInteger where
+--    ? это я погорячился, да
 
-class Group Integer where
-    gzero = 0
-    ginv a = -a
-    gmult = (+)
+-- Хаскель слабоват для нормального определения всех этих штук.
+-- Кольцо вообще непонятно как определить, потому что группы и полугруппы
+-- должны быть по паре (тип, операция).
+class Monoid a => Group a where
+    ginv :: a -> a
 
-class Group MulInteger where
-    gzero = 1
-    ginv a = if a == 1 then 1 else undefined
-    gmult = (*)
+-- Определите
+--instance Group для Integer, Rational, MulRational
+
+-- Группу и Абелеву группу в Хаскеле тоже не различить :(
+class Group a => Ring a where
+    -- mappend из моноида это сложение
+    rmul :: a -> a -> a -- а это умножение
+
+-- Определите
+--instance Ring для Integer, Rational
+
+-- На самом деле коммутативное кольцо, но что поделать
+class Ring a => Field a where
+    rinv :: a -> a -> a
+
+-- Определите
+--instance Field для Rational
 
 -- Реализуйте тип для матриц (через списки) и операции над ними
-data (Monoid a, Group a) => Matrix a = Matrix [[a]]
+data Matrix a = ?
 -- Чем должно быть a? Моноидом? Группой? Ещё чем-нибудь?
 
 matsum :: Matrix a -> Matrix a -> Matrix a
