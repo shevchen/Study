@@ -87,7 +87,11 @@ subsequences (x:xs) = (map ((:) x) sub) ++ sub
 -- (*) Все перестановки элементов данного списка
 permutations :: [a] -> [[a]]
 permutations [] = []
-permutations (x:xs) = ?
+permutations (x:xs) = permutations' (x, [], xs)
+
+permutations' :: (a, [a], [a]) -> [[a]]
+permutations' (_, _, [])    = [[]]
+permutations' (x, xs, y:ys) = map ((:) x) (permutations (xs ++ (y:ys))) ++ permutations' (y, x:xs, ys)
 
 -- Повторяет элемент бесконечное число раз
 repeat :: a -> [a]
@@ -176,7 +180,7 @@ instance Monoid Integer where
 
 data MulInteger = Mult Integer
 
-instange Monoid MulInteger where
+instance Monoid MulInteger where
     mzero = 1
     (Mult a) `mappend` (Mult b) = Mult $ a * b
 
@@ -193,6 +197,7 @@ class Monoid a => AMFoldable t a where
 data MTree a = Monoid a => MLeaf | MNode a (MTree a) (MTree a)
 
 -- Выпишите тип этого выражения. Фигурирует ли в нём Monoid? Почему?
+mtfold :: MTree a -> a
 mtfold MLeaf = mzero -- А то, что a - моноид нам будет даровано самой природой
 mtfold (MNode a l r) = a `mappend` (mtfold l) `mappend` (mtfold r)
 
@@ -226,16 +231,39 @@ class Group Integer where
     gmult = (+)
 
 class Group MulInteger where
-    ?
+    gzero = 1
+    ginv a = if a == 1 then 1 else undefined
+    gmult = (*)
 
 -- Реализуйте тип для матриц (через списки) и операции над ними
-data Matrix a = ?
+data (Monoid a, Group a) => Matrix a = Matrix [[a]]
 -- Чем должно быть a? Моноидом? Группой? Ещё чем-нибудь?
 
-matsum = ?
+matsum :: Matrix a -> Matrix a -> Matrix a
+matsum (Matrix []) (Matrix [])         = Matrix []
+matsum (Matrix []) _                   = undefined
+matsum _ (Matrix [])                   = undefined
+matsum (Matrix (x:xs)) (Matrix (y:ys)) = (scalarsum x y):(matsum (Matrix xs) (Matrix ys))
 
-matscalarmul = ?
+scalarsum :: Group a => [a] -> [a] -> [a]
+scalarsum [] []         = []
+scalarsum [] _          = undefined
+scalarsum _ []          = undefined
+scalarsum (x:xs) (y:ys) = (gmult x y):(scalarsum xs ys)
 
+matscalarmul :: Matrix a -> Matrix a -> Matrix a
+matscalarmul (Matrix []) (Matrix []) = Matrix []
+matscalarmul (Matrix []) _ = undefined
+matscalarmul _ (Matrix []) = undefined
+matscalarmul (Matrix (x:xs)) (Matrix (y:ys)) = (scalarmul x y):(matscalarmul (Matrix xs) (Matrix ys))
+
+scalarmul :: Monoid a => [a] -> [a] -> [a]
+scalarmul [] []         = []
+scalarmul [] _          = undefined
+scalarmul _ []          = undefined
+scalarmul (x:xs) (y:ys) = (mappend x y):(scalarmul xs ys)
+
+matmul :: Matrix a -> Matrix a -> Matrix a
 matmul = ?
 
 -- (**) Реализуйте классы типов для векторных и скалярных полей.
