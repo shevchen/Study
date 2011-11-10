@@ -178,7 +178,7 @@ instance Monoid Integer where
     mappend = (+)
 
 data MulInteger = Mult Integer
-data MulRational = Mult Rational
+data MulRational = RMult Rational
 
 -- Реализуйте инстансы Monoid для Rational и MulRational
 instance Monoid Rational where
