@@ -1,9 +1,9 @@
 module OtherPrelude where
-import Prelude( Bool(..), Integer(..), Rational(..), Num(..)
+import Prelude( Show(..), Bool(..), Integer(..), Rational(..), Num(..)
                , (+), (-), (*), (/)
                , (<), (==), (>), (<=), (>=)
                , not, (&&)
-               , undefined, error, ($) )
+               , undefined, error, ($), (.) )
 
 -- Склеить два списка за O(length a)
 (++) :: [a] -> [a] -> [a]
@@ -297,12 +297,17 @@ instance Field Rational where
 data Matrix a = Ring a => Matrix [[a]]
 -- Чем должно быть a? Моноидом? Группой? Ещё чем-нибудь?
 
+getTable :: Matrix a -> [[a]]
+getTable (Matrix x) = x
+
+instance Show a => Show (Matrix a) where
+    show = show . getTable
+
 matsum :: Matrix a -> Matrix a -> Matrix a
 matsum (Matrix []) (Matrix [])         = Matrix []
 matsum (Matrix []) _                   = undefined
 matsum _ (Matrix [])                   = undefined
-matsum (Matrix (x:xs)) (Matrix (y:ys)) = Matrix ((scalarsum x y):next)
-                                         where Matrix next = matsum (Matrix xs) (Matrix ys)
+matsum (Matrix (x:xs)) (Matrix (y:ys)) = Matrix ((scalarsum x y):(getTable (matsum (Matrix xs) (Matrix ys))))
 
 scalarsum :: Monoid a => [a] -> [a] -> [a]
 scalarsum [] []         = []
@@ -314,8 +319,7 @@ matscalarmul :: Matrix a -> Matrix a -> Matrix a
 matscalarmul (Matrix []) (Matrix [])         = Matrix []
 matscalarmul (Matrix []) _                   = undefined
 matscalarmul _ (Matrix [])                   = undefined
-matscalarmul (Matrix (x:xs)) (Matrix (y:ys)) = Matrix ((scalarmul x y):next)
-                                               where Matrix next = matscalarmul (Matrix xs) (Matrix ys)
+matscalarmul (Matrix (x:xs)) (Matrix (y:ys)) = Matrix ((scalarmul x y):(getTable (matscalarmul (Matrix xs) (Matrix ys))))
 
 scalarmul :: Ring a => [a] -> [a] -> [a]
 scalarmul [] []         = []
@@ -324,9 +328,8 @@ scalarmul _ []          = undefined
 scalarmul (x:xs) (y:ys) = (rmul x y):(scalarmul xs ys)
 
 matmul :: Matrix a -> Matrix a -> Matrix a
-matmul (Matrix m1) (Matrix m2) = if has then Matrix (matrixPrepend (map (multiplicate fc) m1) next) else Matrix []
+matmul (Matrix m1) (Matrix m2) = if has then Matrix (matrixPrepend (map (multiplicate fc) m1) (getTable (matmul (Matrix m1) (Matrix other)))) else Matrix []
                                     where (fc, other, has) = firstColumn m2
-                                          Matrix next = matmul (Matrix m1) (Matrix other)
 
 multiplicate :: Ring a => [a] -> [a] -> a
 multiplicate [] [] = mzero
@@ -339,8 +342,8 @@ isEmpty [] = True
 isEmpty _  = False
 
 firstColumn :: [[a]] -> ([a], [[a]], Bool)
-firstColumn []          = ([], [[]], True) 
-firstColumn ([]:xs)     = if has && isEmpty fc then undefined else (fc, other, False)
+firstColumn []          = ([], [], True) 
+firstColumn ([]:xs)     = if has && not (isEmpty fc) then undefined else (fc, other, False)
                           where (fc, other, has) = firstColumn xs
 firstColumn ((y:ys):xs) = if not has then undefined else (y:fc, ys:other, True)
                           where (fc, other, has) = firstColumn xs
@@ -348,7 +351,7 @@ firstColumn ((y:ys):xs) = if not has then undefined else (y:fc, ys:other, True)
 matrixPrepend :: [a] -> [[a]] -> [[a]]
 matrixPrepend [] []         = []
 matrixPrepend [] _          = undefined
-matrixPrepend _ []          = undefined
+matrixPrepend (x:xs) []     = [x]:(matrixPrepend xs [])
 matrixPrepend (x:xs) (y:ys) = (x:y):(matrixPrepend xs ys)
 
 -- (**) Реализуйте классы типов для векторных и скалярных полей.
