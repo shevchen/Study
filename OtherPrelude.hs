@@ -1,7 +1,7 @@
 module OtherPrelude where
-import Prelude( Bool(..), Integer(..), Rational(..)
+import Prelude( Bool(..), Integer(..), Rational(..), Num(..)
                , (+), (-), (*), (/)
-               , (<), (==), (>), (<=), (>=), (/=)
+               , (<), (==), (>), (<=), (>=)
                , not, (&&)
                , undefined, error, ($) )
 
@@ -215,7 +215,7 @@ class Monoid a => AMFoldable t a where
 data MTree a = Monoid a => MLeaf | MNode a (MTree a) (MTree a)
 
 -- Выпишите тип этого выражения. Фигурирует ли в нём Monoid? Почему?
-mtfold :: MTree a -> a
+mtfold :: Monoid a => MTree a -> a
 mtfold MLeaf = mzero -- А то, что a - моноид нам будет даровано самой природой
 mtfold (MNode a l r) = a `mappend` (mtfold l) `mappend` (mtfold r)
 
@@ -226,9 +226,9 @@ mtfold (MNode a l r) = a `mappend` (mtfold l) `mappend` (mtfold r)
 -- констреинтах Monoid a быть не должно.
 -- Для широты фантазии в терме можно использовать классы типов, определённые в любом
 -- месте этого файла.
-mterm :: MTree a -> Integer
-mterm MLeaf = mzero
-mterm (MNode a t1 t2) = mterm t1 + mterm t2 + (if a == mzero then 0 else 1)
+mterm :: MTree a -> MTree a
+mterm MLeaf = MLeaf
+mterm (MNode x t1 t2) = MNode x t1 t2
 
 -- (**) Разберитесь чем отличаются эти определения.
 -- "Скомпилируйте" их в наш гипотетический язык программирования с
@@ -334,9 +334,13 @@ multiplicate [] _ = undefined
 multiplicate _ [] = undefined
 multiplicate (x:xs) (y:ys) = mappend (rmul x y) (multiplicate xs ys)
 
+isEmpty :: [a] -> Bool
+isEmpty [] = True
+isEmpty _  = False
+
 firstColumn :: [[a]] -> ([a], [[a]], Bool)
 firstColumn []          = ([], [[]], True) 
-firstColumn ([]:xs)     = if has && (fc /= []) then undefined else (fc, other, False)
+firstColumn ([]:xs)     = if has && isEmpty fc then undefined else (fc, other, False)
                           where (fc, other, has) = firstColumn xs
 firstColumn ((y:ys):xs) = if not has then undefined else (y:fc, ys:other, True)
                           where (fc, other, has) = firstColumn xs
