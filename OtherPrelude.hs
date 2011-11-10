@@ -90,7 +90,7 @@ permutations [] = []
 permutations (x:xs) = permutations' (x, [], xs)
 
 permutations' :: (a, [a], [a]) -> [[a]]
-permutations' (_, _, [])    = [[]]
+permutations' (_, _, [])    = []
 permutations' (x, xs, y:ys) = map ((:) x) (permutations (xs ++ (y:ys))) ++ permutations' (y, x:xs, ys)
 
 -- Повторяет элемент бесконечное число раз
@@ -138,7 +138,9 @@ foldr f z (x:xs) = f x (foldr f z xs)
 -- Аналогично
 --  head (scanr f z xs) == foldr f z xs.
 scanr :: (a -> b -> b) -> b -> [a] -> [b]
-scanr = ?
+scanr f z [] = [z]
+scanr f z (x:xs) = (f y z):(y:ys)
+                   where y:ys = scanr f z xs
 
 finiteTimeTest = take 10 $ foldr (:) [] $ repeat 1
 
@@ -182,12 +184,14 @@ data MulRational = RMult Rational
 
 -- Реализуйте инстансы Monoid для Rational и MulRational
 instance Monoid Rational where
-    ?
+    mzero = 0
+    mappend = (+)
 
 instance Monoid MulRational where
-    ?
+    mzero = 1
+    mappend (RMult a) (RMult b) = RMult (a * b)
 
-instange Monoid MulInteger where
+instance Monoid MulInteger where
     mzero = 1
     (Mult a) `mappend` (Mult b) = Mult $ a * b
 
@@ -251,6 +255,14 @@ class Monoid a => Group a where
 
 -- Определите
 --instance Group для Integer, Rational, MulRational
+instance Group Integer where
+    ginv = (-)
+
+instance Group Rational where
+    ginv = (-)
+
+instance Group MulRational where
+    ginv (RMult a) = RMult (1 / a)
 
 -- Группу и Абелеву группу в Хаскеле тоже не различить :(
 class Group a => Ring a where
@@ -259,6 +271,11 @@ class Group a => Ring a where
 
 -- Определите
 --instance Ring для Integer, Rational
+instance Ring Integer where
+    rmul = (*)
+
+instance Ring Rational where
+    rmul = (*)
 
 -- На самом деле коммутативное кольцо, но что поделать
 class Ring a => Field a where
@@ -266,9 +283,11 @@ class Ring a => Field a where
 
 -- Определите
 --instance Field для Rational
+instance Ring Rational where
+    rinv = (/)
 
 -- Реализуйте тип для матриц (через списки) и операции над ними
-data Matrix a = ?
+data Matrix a = Ring a => [[a]]
 -- Чем должно быть a? Моноидом? Группой? Ещё чем-нибудь?
 
 matsum :: Matrix a -> Matrix a -> Matrix a
@@ -277,32 +296,52 @@ matsum (Matrix []) _                   = undefined
 matsum _ (Matrix [])                   = undefined
 matsum (Matrix (x:xs)) (Matrix (y:ys)) = (scalarsum x y):(matsum (Matrix xs) (Matrix ys))
 
-scalarsum :: Group a => [a] -> [a] -> [a]
+scalarsum :: Monoid a => [a] -> [a] -> [a]
 scalarsum [] []         = []
 scalarsum [] _          = undefined
 scalarsum _ []          = undefined
-scalarsum (x:xs) (y:ys) = (gmult x y):(scalarsum xs ys)
+scalarsum (x:xs) (y:ys) = (mappend x y):(scalarsum xs ys)
 
 matscalarmul :: Matrix a -> Matrix a -> Matrix a
-matscalarmul (Matrix []) (Matrix []) = Matrix []
-matscalarmul (Matrix []) _ = undefined
-matscalarmul _ (Matrix []) = undefined
+matscalarmul (Matrix []) (Matrix [])         = Matrix []
+matscalarmul (Matrix []) _                   = undefined
+matscalarmul _ (Matrix [])                   = undefined
 matscalarmul (Matrix (x:xs)) (Matrix (y:ys)) = (scalarmul x y):(matscalarmul (Matrix xs) (Matrix ys))
 
-scalarmul :: Monoid a => [a] -> [a] -> [a]
+scalarmul :: Ring a => [a] -> [a] -> [a]
 scalarmul [] []         = []
 scalarmul [] _          = undefined
 scalarmul _ []          = undefined
-scalarmul (x:xs) (y:ys) = (mappend x y):(scalarmul xs ys)
+scalarmul (x:xs) (y:ys) = (rmul x y):(scalarmul xs ys)
 
 matmul :: Matrix a -> Matrix a -> Matrix a
-matmul = ?
+matmul (Matrix m1) (Matrix m2) = if has then matrixPrepend (map (multiplicate fc) m1) (matmul (Matrix m1) (Matrix other)) else Matrix []
+                                    where (fc, other, has) = firstColumn m2
+
+multiplicate :: Ring a => [a] -> [a] -> a
+multiplicate [] [] = mzero
+multiplicate [] _ = undefined
+multiplicate _ [] = undefined
+multiplicate (x:xs) (y:ys) = mappend (rmul x y) (multiplicate xs ys)
+
+firstColumn :: [[a]] -> ([a], [[a]], Boolean)
+firstColumn []          = ([], [[]], True) 
+firstColumn ([]:xs)     = if has && (fc /= []) then undefined else (fc, other, False)
+                          where (fc, other, has) = firstColumn xs
+firstColumn ((y:ys):xs) = if !has then undefined else (y:fc, ys:other, True)
+                          where (fc, other, has) = firstColumn xs
+
+matrixPrepend :: [a] -> [[a]] -> [[a]]
+matrixPrepend [] []         = []
+matrixPrepend [] _          = undefined
+matrixPrepend _ []          = undefined
+matrixPrepend (x:xs) (y:ys) = (x:y):(matrixPrepend xs ys)
 
 -- (**) Реализуйте классы типов для векторных и скалярных полей.
 -- Перепишите в этих терминах что-нибудь из написанного выше.
 -- Реализуйте оператор дифференцирования, взятия градиента.
-class ? ScalarField ? where
-    ?
+-- class ? ScalarField ? where
+--     ?
 
-class ? VectorField ? where
-    ?
+-- class ? VectorField ? where
+--     ?
