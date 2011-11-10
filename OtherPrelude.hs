@@ -1,5 +1,5 @@
 module OtherPrelude where
-import Prelude
+-- import Prelude
 
 -- Склеить два списка за O(length a)
 (++) :: [a] -> [a] -> [a]
@@ -220,7 +220,7 @@ mtfold (MNode a l r) = a `mappend` (mtfold l) `mappend` (mtfold r)
 -- Для широты фантазии в терме можно использовать классы типов, определённые в любом
 -- месте этого файла.
 mterm :: MTree a -> Integer
-mterm Mleaf = mzero
+mterm MLeaf = mzero
 mterm (MNode a t1 t2) = mterm t1 + mterm t2 + (if a == mzero then 0 else 1)
 
 -- (**) Разберитесь чем отличаются эти определения.
@@ -279,15 +279,15 @@ instance Ring Rational where
 
 -- На самом деле коммутативное кольцо, но что поделать
 class Ring a => Field a where
-    rinv :: a -> a -> a
+    rinv :: a -> a
 
 -- Определите
 --instance Field для Rational
-instance Ring Rational where
-    rinv = (/)
+instance Field Rational where
+    rinv = (/) 1
 
 -- Реализуйте тип для матриц (через списки) и операции над ними
-data Matrix a = Ring a => [[a]]
+data Matrix a = Ring a => Matrix [[a]]
 -- Чем должно быть a? Моноидом? Группой? Ещё чем-нибудь?
 
 matsum :: Matrix a -> Matrix a -> Matrix a
@@ -324,11 +324,11 @@ multiplicate [] _ = undefined
 multiplicate _ [] = undefined
 multiplicate (x:xs) (y:ys) = mappend (rmul x y) (multiplicate xs ys)
 
-firstColumn :: [[a]] -> ([a], [[a]], Boolean)
+firstColumn :: [[a]] -> ([a], [[a]], Bool)
 firstColumn []          = ([], [[]], True) 
 firstColumn ([]:xs)     = if has && (fc /= []) then undefined else (fc, other, False)
                           where (fc, other, has) = firstColumn xs
-firstColumn ((y:ys):xs) = if !has then undefined else (y:fc, ys:other, True)
+firstColumn ((y:ys):xs) = if not has then undefined else (y:fc, ys:other, True)
                           where (fc, other, has) = firstColumn xs
 
 matrixPrepend :: [a] -> [[a]] -> [[a]]
