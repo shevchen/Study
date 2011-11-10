@@ -93,12 +93,12 @@ subsequences (x:xs) = (map ((:) x) sub) ++ sub
 
 -- (*) Все перестановки элементов данного списка
 permutations :: [a] -> [[a]]
-permutations [] = []
-permutations (x:xs) = permutations' (x, [], xs)
+permutations [] = [[]]
+permutations (x:xs) = permutations' x [] xs
 
-permutations' :: (a, [a], [a]) -> [[a]]
-permutations' (_, _, [])    = []
-permutations' (x, xs, y:ys) = map ((:) x) (permutations (xs ++ (y:ys))) ++ permutations' (y, x:xs, ys)
+permutations' :: a -> [a] -> [a] -> [[a]]
+permutations' x xs []     = map ((:) x) (permutations xs)
+permutations' x xs (y:ys) = map ((:) x) (permutations (xs ++ (y:ys))) ++ (permutations' y (x:xs) ys)
 
 -- Повторяет элемент бесконечное число раз
 repeat :: a -> [a]
