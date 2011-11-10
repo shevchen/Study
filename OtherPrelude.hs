@@ -1,5 +1,9 @@
 module OtherPrelude where
--- import Prelude
+import Prelude( Bool(..), Integer(..), Rational(..)
+               , (+), (-), (*), (/)
+               , (<), (==), (>), (<=), (>=), (/=)
+               , not, (&&)
+               , undefined, error, ($) )
 
 -- Склеить два списка за O(length a)
 (++) :: [a] -> [a] -> [a]
@@ -70,8 +74,11 @@ break = span
 
 -- Список задом на перёд
 reverse :: [a] -> [a]
-reverse []     = []
-reverse (x:xs) = (reverse xs):[x]
+reverse l = reverse' l []
+
+reverse' :: [a] -> [a] -> [a]
+reverse' [] l     = l
+reverse' (x:xs) l = reverse' xs (x:l)
 
 -- map f l = из первой лабораторной
 map :: (a -> b) -> [a] -> [b]
@@ -139,7 +146,7 @@ foldr f z (x:xs) = f x (foldr f z xs)
 --  head (scanr f z xs) == foldr f z xs.
 scanr :: (a -> b -> b) -> b -> [a] -> [b]
 scanr f z [] = [z]
-scanr f z (x:xs) = (f y z):(y:ys)
+scanr f z (x:xs) = (f x y):(y:ys)
                    where y:ys = scanr f z xs
 
 finiteTimeTest = take 10 $ foldr (:) [] $ repeat 1
@@ -188,11 +195,11 @@ instance Monoid Rational where
     mappend = (+)
 
 instance Monoid MulRational where
-    mzero = 1
+    mzero = RMult 1
     mappend (RMult a) (RMult b) = RMult (a * b)
 
 instance Monoid MulInteger where
-    mzero = 1
+    mzero = Mult 1
     (Mult a) `mappend` (Mult b) = Mult $ a * b
 
 -- Фолдабл
@@ -256,10 +263,10 @@ class Monoid a => Group a where
 -- Определите
 --instance Group для Integer, Rational, MulRational
 instance Group Integer where
-    ginv = (-)
+    ginv = (-) 0
 
 instance Group Rational where
-    ginv = (-)
+    ginv = (-) 0
 
 instance Group MulRational where
     ginv (RMult a) = RMult (1 / a)
@@ -294,7 +301,8 @@ matsum :: Matrix a -> Matrix a -> Matrix a
 matsum (Matrix []) (Matrix [])         = Matrix []
 matsum (Matrix []) _                   = undefined
 matsum _ (Matrix [])                   = undefined
-matsum (Matrix (x:xs)) (Matrix (y:ys)) = (scalarsum x y):(matsum (Matrix xs) (Matrix ys))
+matsum (Matrix (x:xs)) (Matrix (y:ys)) = Matrix ((scalarsum x y):next)
+                                         where Matrix next = matsum (Matrix xs) (Matrix ys)
 
 scalarsum :: Monoid a => [a] -> [a] -> [a]
 scalarsum [] []         = []
@@ -306,7 +314,8 @@ matscalarmul :: Matrix a -> Matrix a -> Matrix a
 matscalarmul (Matrix []) (Matrix [])         = Matrix []
 matscalarmul (Matrix []) _                   = undefined
 matscalarmul _ (Matrix [])                   = undefined
-matscalarmul (Matrix (x:xs)) (Matrix (y:ys)) = (scalarmul x y):(matscalarmul (Matrix xs) (Matrix ys))
+matscalarmul (Matrix (x:xs)) (Matrix (y:ys)) = Matrix ((scalarmul x y):next)
+                                               where Matrix next = matscalarmul (Matrix xs) (Matrix ys)
 
 scalarmul :: Ring a => [a] -> [a] -> [a]
 scalarmul [] []         = []
@@ -315,8 +324,9 @@ scalarmul _ []          = undefined
 scalarmul (x:xs) (y:ys) = (rmul x y):(scalarmul xs ys)
 
 matmul :: Matrix a -> Matrix a -> Matrix a
-matmul (Matrix m1) (Matrix m2) = if has then matrixPrepend (map (multiplicate fc) m1) (matmul (Matrix m1) (Matrix other)) else Matrix []
+matmul (Matrix m1) (Matrix m2) = if has then Matrix (matrixPrepend (map (multiplicate fc) m1) next) else Matrix []
                                     where (fc, other, has) = firstColumn m2
+                                          Matrix next = matmul (Matrix m1) (Matrix other)
 
 multiplicate :: Ring a => [a] -> [a] -> a
 multiplicate [] [] = mzero
