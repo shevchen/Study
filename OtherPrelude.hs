@@ -315,17 +315,9 @@ scalarsum [] _          = undefined
 scalarsum _ []          = undefined
 scalarsum (x:xs) (y:ys) = (mappend x y):(scalarsum xs ys)
 
-matscalarmul :: Matrix a -> Matrix a -> Matrix a
-matscalarmul (Matrix []) (Matrix [])         = Matrix []
-matscalarmul (Matrix []) _                   = undefined
-matscalarmul _ (Matrix [])                   = undefined
-matscalarmul (Matrix (x:xs)) (Matrix (y:ys)) = Matrix ((scalarmul x y):(getTable (matscalarmul (Matrix xs) (Matrix ys))))
-
-scalarmul :: Ring a => [a] -> [a] -> [a]
-scalarmul [] []         = []
-scalarmul [] _          = undefined
-scalarmul _ []          = undefined
-scalarmul (x:xs) (y:ys) = (rmul x y):(scalarmul xs ys)
+matscalarmul :: Ring a => a -> Matrix a -> Matrix a
+matscalarmul _ (Matrix [])     = Matrix []
+matscalarmul x (Matrix (y:ys)) = Matrix ((map (rmul x) y):(getTable (matscalarmul x (Matrix ys))))
 
 matmul :: Matrix a -> Matrix a -> Matrix a
 matmul (Matrix m1) (Matrix m2) = if has then Matrix (matrixPrepend (map (multiplicate fc) m1) (getTable (matmul (Matrix m1) (Matrix other)))) else Matrix []
