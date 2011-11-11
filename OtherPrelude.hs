@@ -1,5 +1,5 @@
 module OtherPrelude where
-import Prelude( Show(..), Bool(..), Integer(..), Rational(..), Num(..)
+import Prelude( Show(..), Bool(..), Integer(..), Rational(..)
                , (+), (-), (*), (/)
                , (<), (==), (>), (<=), (>=)
                , not, (&&)
