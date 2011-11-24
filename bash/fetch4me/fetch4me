@@ -1,0 +1,63 @@
+#!/bin/bash -e
+
+fetch4me_escape() {
+  # Every '/' is substituted with '\\'.
+  ESCAPED=${$1////\\\\}
+}
+
+fetch4me_update_queue() {
+  temp="$QQEDIR/..queue"
+  rm -f "$temp"
+  touch "$temp"
+  file="$QQEDIR/.queue"
+  if [ $0 -eq 0 ]
+  then
+    cat file > temp
+    echo "$2" > temp
+    echo "$3" > temp
+  else
+    cat file | tail -n +3 > temp
+  fi
+  mv "$temp" "$file"
+}
+
+fetch4me_observe() {
+  # QQEDIR, GETELEMFUNC are known
+  queue_size=0
+  fetched=0
+  while true
+  do
+    for f in query* ;
+    do
+      lines=(`cat f`)
+      ref[$queuesize]=${lines[0]}
+      url[$queuesize]=${lines[1]}
+      fetch4me_update_queue 0 "${ref[$queuesize]}" "${url[$queuesize]}"
+      let queuesize+=1
+      rm f
+    done
+    if [ $fetched -lt $queuesize ]
+    then
+      fetch4me_escape ${ref[$fetched]}
+      esc_ref=$ESCAPED
+      fetch4me_escape ${url[$fetched]}
+      esc_url=$ESCAPED
+      full_path="~/Downloads/fetched4you/$esc_ref/$esc_url"
+      fetch4me_update_queue 1
+      fetch4me_update_status 0 "${ref[$fetched]}" "${url[$fetched]}"
+      $GETELEMFUNC -O "$full_path" "${url[$FETCHED]}"
+      if [ $? -ne 0 ]
+      then
+        echo "Error while processing ${url[$fetched]}."
+      else
+        echo "${url[$fetched]} saved successfully."
+      fi
+      fetch4me_update_status 1
+      fetch4me_update_finished "${ref[$fetched]}" "${url[$fetched]}"
+      let fetched+=1
+    fi
+  done
+}
+
+QQEDIR="~/.fetch4me"
+GETELEMFUNC="wget"
