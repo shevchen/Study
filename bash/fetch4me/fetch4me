@@ -10,17 +10,62 @@ fetch4me_update_queue() {
   rm -f "$temp"
   touch "$temp"
   file="$QQEDIR/.queue"
-  if [ $0 -eq 0 ]
-  then
-    cat file > temp
-    echo "$2" > temp
-    echo "$3" > temp
-  else
-    cat file | tail -n +3 > temp
-  fi
+  case "$1" in
+    "-a" )
+      cat "$file" >> "$temp"
+      echo "$2" >> "$temp"
+      echo "$3" >> "$temp"
+      ;;
+    "-r" )
+      cat "$file" | tail -n +3 >> "$temp"
+      ;;
+    * )
+      echo "$1: no such flag." >&2
+      return 1
+      ;;
+  esac
   mv "$temp" "$file"
+  rm "$temp"
+  return 0
 }
 
+fetch4me_update_status() {
+  temp="$QQEDIR/..status"
+  rm -f "$temp"
+  touch "$temp"
+  file="$QQEDIR/.status"
+  queue="$QQEDIR/.queue"
+  case "$1" in
+    "-a" )
+      echo "Current file:" >> "$temp"
+      echo "$2" >> "$temp"
+      echo "Referer:" >> "$temp"
+      echo "$3" >> "$temp"
+      echo >> "$temp"
+      ;;
+    "-u" )
+      echo "No file being processed." >> "$temp"
+      echo >> "$temp"
+      ;;
+    * )
+      echo "$1: no such flag." >&2
+      return 1
+      ;;
+  esac
+  echo "Queue:" >> "$temp"
+  cat "$queue" >> "$temp"
+  mv "$temp" "$file"
+  rm "$temp"
+  return 0
+}
+
+fetch4me_update_finished() {
+  file="$QQEDIR/.finished"
+  newline=`date +%s`" $1 $2"
+  echo "$newline" >> "$file"
+  return 0
+}
+      
 fetch4me_observe() {
   # QQEDIR, GETELEMFUNC are known
   queue_size=0
@@ -32,7 +77,8 @@ fetch4me_observe() {
       lines=(`cat f`)
       ref[$queuesize]=${lines[0]}
       url[$queuesize]=${lines[1]}
-      fetch4me_update_queue 0 "${ref[$queuesize]}" "${url[$queuesize]}"
+      fetch4me_update_queue -a "${ref[$queuesize]}" "${url[$queuesize]}"
+      fetch4me_update_status -u
       let queuesize+=1
       rm f
     done
@@ -43,20 +89,39 @@ fetch4me_observe() {
       fetch4me_escape ${url[$fetched]}
       esc_url=$ESCAPED
       full_path="~/Downloads/fetched4you/$esc_ref/$esc_url"
-      fetch4me_update_queue 1
-      fetch4me_update_status 0 "${ref[$fetched]}" "${url[$fetched]}"
+      fetch4me_update_queue -r
+      fetch4me_update_status -a "${ref[$fetched]}" "${url[$fetched]}"
       $GETELEMFUNC -O "$full_path" "${url[$FETCHED]}"
       if [ $? -ne 0 ]
       then
-        echo "Error while processing ${url[$fetched]}."
+        echo "Error while processing ${url[$fetched]}." >&2
       else
         echo "${url[$fetched]} saved successfully."
       fi
-      fetch4me_update_status 1
+      fetch4me_update_status -u
       fetch4me_update_finished "${ref[$fetched]}" "${url[$fetched]}"
       let fetched+=1
     fi
   done
+}
+
+fetch4me_daemonize() {
+  return 0
+}
+
+fetch4me_load_vars() {
+  settings="~/.fetch4merc"
+  while read line
+  do
+    if [ ${line:0:7} == "QQEDIR=" ]
+    then
+      $QQEDIR="${line:7}"
+    fi
+    if [ "${line:0:12}" == "GETELEMFUNC=" ]
+    then
+      $GETELEMFUNC="${line:12}"
+    fi
+  done < "$settings"
 }
 
 QQEDIR="~/.fetch4me"
