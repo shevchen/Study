@@ -2,7 +2,7 @@
 
 fetch4me_escape() {
   # Every '/' is substituted with '\\'.
-  ESCAPED=${$1////\\\\}
+  ESCAPED=${1////\\\\}
 }
 
 fetch4me_update_queue() {
@@ -25,7 +25,6 @@ fetch4me_update_queue() {
       ;;
   esac
   mv "$temp" "$file"
-  rm "$temp"
   return 0
 }
 
@@ -55,7 +54,6 @@ fetch4me_update_status() {
   echo "Queue:" >> "$temp"
   cat "$queue" >> "$temp"
   mv "$temp" "$file"
-  rm "$temp"
   return 0
 }
 
@@ -67,20 +65,20 @@ fetch4me_update_finished() {
 }
       
 fetch4me_observe() {
-  # QQEDIR, GETELEMFUNC are known
+  touch "$QQEDIR"/.queue "$QQEDIR"/.status "$QQEDIR"/.finished
   queue_size=0
   fetched=0
   while true
   do
-    for f in query* ;
+    for f in "$QQEDIR"/query*
     do
-      lines=(`cat f`)
+      lines=(`cat "$f"`)
       ref[$queuesize]=${lines[0]}
       url[$queuesize]=${lines[1]}
       fetch4me_update_queue -a "${ref[$queuesize]}" "${url[$queuesize]}"
       fetch4me_update_status -u
       let queuesize+=1
-      rm f
+      rm "$f"
     done
     if [ $fetched -lt $queuesize ]
     then
@@ -89,7 +87,6 @@ fetch4me_observe() {
       fetch4me_escape ${url[$fetched]}
       esc_url=$ESCAPED
       full_path="~/Downloads/fetched4you/$esc_ref/$esc_url"
-      fetch4me_update_queue -r
       fetch4me_update_status -a "${ref[$fetched]}" "${url[$fetched]}"
       $GETELEMFUNC -O "$full_path" "${url[$FETCHED]}"
       if [ $? -ne 0 ]
@@ -99,6 +96,7 @@ fetch4me_observe() {
         echo "${url[$fetched]} saved successfully."
       fi
       fetch4me_update_status -u
+      fetch4me_update_queue -r
       fetch4me_update_finished "${ref[$fetched]}" "${url[$fetched]}"
       let fetched+=1
     fi
@@ -106,11 +104,15 @@ fetch4me_observe() {
 }
 
 fetch4me_daemonize() {
-  nohup fetch4me_observe &
+  return 0
 }
 
 fetch4me_load_vars() {
   settings="~/.fetch4merc"
+  if [ ! -e "$settings" ]
+  then
+    return 0
+  fi
   while read line
   do
     if [ ${line:0:7} == "QQEDIR=" ]
@@ -121,10 +123,11 @@ fetch4me_load_vars() {
       $GETELEMFUNC="${line:12}"
     fi
   done < "$settings"
+  return 0
 }
 
 fetch4me_create_query() {
-  file="query"`date +%N`
+  file="$QQEDIR""/query"`date +%N`
   while [ -e "$file" ]
   do
     rand=$RANDOM
@@ -137,11 +140,12 @@ fetch4me_create_query() {
   return 0
 }
 
-QQEDIR="~/.fetch4me"
-GETELEMFUNC="wget"
+QQEDIR=~/.fetch4me
+GETELEMFUNC=wget
 
 fetch4me_load_vars
 referer="no_referer"
+urls=0
 while (($#))
 do
   case "$1" in
@@ -166,12 +170,20 @@ do
       shift
       ;;
     * )
+      mkdir -p "$QQEDIR"
       while (($#))
       do
         fetch4me_create_query "$referer" "$1"
         shift
       done
+      urls=1
       ;;
   esac
 done
+if [ $urls -eq 0 ]
+then
+  echo "No urls given." >&2
+  exit 1
+fi
 fetch4me_daemonize
+fetch4me_observe
