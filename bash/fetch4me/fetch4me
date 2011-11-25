@@ -70,10 +70,12 @@ fetch4me_observe() {
   fetched=0
   while true
   do
-    if [ -e "$QQEDIR"/query* ]
+    list=(`ls "$QQEDIR" | grep ^query`)
+    if [ ${#list[@]} -gt 0 ]
     then
-      for f in "$QQEDIR"/query*
+      for file in "$list"
       do
+        f="$QQEDIR/$file"
         lines=(`cat "$f"`)
         ref[$queuesize]=${lines[0]}
         url[$queuesize]=${lines[1]}
@@ -100,8 +102,8 @@ fetch4me_observe() {
       else
         echo "${url[$fetched]} saved successfully."
       fi
-      fetch4me_update_status -u
       fetch4me_update_queue -r
+      fetch4me_update_status -u
       fetch4me_update_finished "${ref[$fetched]}" "${url[$fetched]}"
       let fetched+=1
     fi
