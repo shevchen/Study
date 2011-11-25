@@ -70,7 +70,7 @@ fetch4me_observe() {
   fetched=0
   while true
   do
-    list=(`ls "$QQEDIR" | grep ^query`)
+    list=(`ls "$QQEDIR" | grep ^query`) || true
     if [ ${#list[@]} -gt 0 ]
     then
       for file in "$list"
@@ -95,7 +95,7 @@ fetch4me_observe() {
       mkdir -p "$save_dir"
       full_path="$save_dir/$esc_url"
       fetch4me_update_status -a "${ref[$fetched]}" "${url[$fetched]}"
-      $GETELEMFUNC -nv -O "$full_path" "${url[$fetched]}"
+      $GETELEMFUNC -nv -O "$full_path" --referer="${ref[$fetched]}" "${url[$fetched]}"
       if [ $? -ne 0 ]
       then
         echo "Error while processing ${url[$fetched]}." >&2
@@ -111,7 +111,8 @@ fetch4me_observe() {
 }
 
 fetch4me_daemonize() {
-  return 0
+  trap 'echo FUCK U' HUP INT
+  fetch4me_observe
 }
 
 fetch4me_load_vars() {
@@ -190,4 +191,3 @@ then
   exit 1
 fi
 fetch4me_daemonize
-fetch4me_observe
