@@ -65,9 +65,19 @@ fetch4me_update_finished() {
 }
       
 fetch4me_observe() {
-  touch "$QQEDIR"/.queue "$QQEDIR"/.status "$QQEDIR"/.finished
-  queue_size=0
+  queuesize=0
   fetched=0
+  touch "$QQEDIR"/.queue "$QQEDIR"/.status "$QQEDIR"/.finished
+  list=(`cat "$QQEDIR/.queue"`)
+  if [ ${#list[@]} -gt 0 ]
+  then
+    for (( i=0; i<${#list[@]}; i+=2 ))
+    do
+      ref[$queuesize]=${list[$i]}
+      url[$queuesize]=${list[$(($i+1))]}
+      let queuesize+=1
+    done
+  fi
   while true
   do
     list=(`ls "$QQEDIR" | grep ^query`) || true
@@ -96,7 +106,7 @@ fetch4me_observe() {
       full_path="$save_dir/$esc_url"
       echo "Downloading ${url[$fetched]}..."
       fetch4me_update_status -a "${ref[$fetched]}" "${url[$fetched]}"
-      $GETELEMFUNC -q -O "$full_path" "${url[$fetched]}"
+      $GETELEMFUNC -cq -O "$full_path" "${url[$fetched]}"
       if [ $? -ne 0 ]
       then
         echo "Error while processing ${url[$fetched]}." >&2
@@ -179,7 +189,6 @@ do
       shift
       ;;
     * )
-      mkdir -p "$QQEDIR"
       url[$urls]="$1"
       shift
       let urls+=1
@@ -191,6 +200,7 @@ then
   echo "No urls given." >&2
   exit 1
 fi
+mkdir -p "$QQEDIR"
 for u in "$url"
 do
   fetch4me_create_query "$referer" "$u"
