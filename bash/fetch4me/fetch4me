@@ -37,9 +37,9 @@ fetch4me_update_status() {
   case "$1" in
     "-a" )
       echo "Current file:" >> "$temp"
-      echo "$2" >> "$temp"
-      echo "Referer:" >> "$temp"
       echo "$3" >> "$temp"
+      echo "Referer:" >> "$temp"
+      echo "$" >> "$temp"
       echo >> "$temp"
       ;;
     "-u" )
@@ -94,8 +94,9 @@ fetch4me_observe() {
       save_dir=~/Downloads/fetched4you/"$esc_ref";
       mkdir -p "$save_dir"
       full_path="$save_dir/$esc_url"
+      echo "Downloading ${url[$fetched]}..."
       fetch4me_update_status -a "${ref[$fetched]}" "${url[$fetched]}"
-      $GETELEMFUNC -nv -O "$full_path" --referer="${ref[$fetched]}" "${url[$fetched]}"
+      $GETELEMFUNC -q -O "$full_path" "${url[$fetched]}"
       if [ $? -ne 0 ]
       then
         echo "Error while processing ${url[$fetched]}." >&2
@@ -111,7 +112,7 @@ fetch4me_observe() {
 }
 
 fetch4me_daemonize() {
-  trap 'echo FUCK U' HUP INT
+  trap '' HUP INT
   fetch4me_observe
 }
 
@@ -179,9 +180,9 @@ do
       ;;
     * )
       mkdir -p "$QQEDIR"
-      fetch4me_create_query "$referer" "$1"
+      url[$urls]="$1"
       shift
-      urls=1
+      let urls+=1
       ;;
   esac
 done
@@ -190,4 +191,8 @@ then
   echo "No urls given." >&2
   exit 1
 fi
+for u in "$url"
+do
+  fetch4me_create_query "$referer" "$u"
+done
 fetch4me_daemonize
