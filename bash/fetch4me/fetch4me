@@ -106,7 +106,7 @@ fetch4me_observe() {
 }
 
 fetch4me_daemonize() {
-  return 0
+  nohup fetch4me_observe &
 }
 
 fetch4me_load_vars() {
@@ -116,13 +116,62 @@ fetch4me_load_vars() {
     if [ ${line:0:7} == "QQEDIR=" ]
     then
       $QQEDIR="${line:7}"
-    fi
-    if [ "${line:0:12}" == "GETELEMFUNC=" ]
+    elif [ "${line:0:12}" == "GETELEMFUNC=" ]
     then
       $GETELEMFUNC="${line:12}"
     fi
   done < "$settings"
 }
 
+fetch4me_create_query() {
+  file="query"`date +%N`
+  while [ -e "$file" ]
+  do
+    rand=$RANDOM
+    let rand%=10
+    file="$file$rand"
+  done
+  touch "$file"
+  echo "$1" >> "$file"
+  echo "$2" >> "$file"
+  return 0
+}
+
 QQEDIR="~/.fetch4me"
 GETELEMFUNC="wget"
+
+fetch4me_load_vars
+referer="no_referer"
+while (($#))
+do
+  case "$1" in
+    "-w" )
+      shift
+      if [ $# -eq 0 ]
+      then
+        echo "Invalid arguments." >&2
+        return 1
+      fi
+      QQEDIR="$1"
+      shift
+      ;;
+    "-r" )
+      shift
+      if [ $# -eq 0 ]
+      then
+        echo "Invalid arguments." >&2
+        return 1
+      fi
+      referer="$1"
+      shift
+      ;;
+    * )
+      while (($#))
+      do
+        fetch4me_create_query "$referer" "$1"
+        shift
+      done
+      ;;
+  esac
+done
+fetch4me_daemonize
