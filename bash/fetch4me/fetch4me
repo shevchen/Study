@@ -70,25 +70,30 @@ fetch4me_observe() {
   fetched=0
   while true
   do
-    for f in "$QQEDIR"/query*
-    do
-      lines=(`cat "$f"`)
-      ref[$queuesize]=${lines[0]}
-      url[$queuesize]=${lines[1]}
-      fetch4me_update_queue -a "${ref[$queuesize]}" "${url[$queuesize]}"
-      fetch4me_update_status -u
-      let queuesize+=1
-      rm "$f"
-    done
+    if [ -e "$QQEDIR"/query* ]
+    then
+      for f in "$QQEDIR"/query*
+      do
+        lines=(`cat "$f"`)
+        ref[$queuesize]=${lines[0]}
+        url[$queuesize]=${lines[1]}
+        fetch4me_update_queue -a "${ref[$queuesize]}" "${url[$queuesize]}"
+        fetch4me_update_status -u
+        let queuesize+=1
+        rm "$f"
+      done
+    fi
     if [ $fetched -lt $queuesize ]
     then
       fetch4me_escape ${ref[$fetched]}
       esc_ref=$ESCAPED
       fetch4me_escape ${url[$fetched]}
       esc_url=$ESCAPED
-      full_path="~/Downloads/fetched4you/$esc_ref/$esc_url"
+      save_dir=~/Downloads/fetched4you/"$esc_ref";
+      mkdir -p "$save_dir"
+      full_path="$save_dir/$esc_url"
       fetch4me_update_status -a "${ref[$fetched]}" "${url[$fetched]}"
-      $GETELEMFUNC -O "$full_path" "${url[$FETCHED]}"
+      $GETELEMFUNC -nv -O "$full_path" "${url[$fetched]}"
       if [ $? -ne 0 ]
       then
         echo "Error while processing ${url[$fetched]}." >&2
@@ -171,11 +176,8 @@ do
       ;;
     * )
       mkdir -p "$QQEDIR"
-      while (($#))
-      do
-        fetch4me_create_query "$referer" "$1"
-        shift
-      done
+      fetch4me_create_query "$referer" "$1"
+      shift
       urls=1
       ;;
   esac
