@@ -112,12 +112,12 @@ fetch4me_observe() {
 }
 
 fetch4me_daemonize() {
-  trap '' HUP INT
+  trap '' HUP #INT
   fetch4me_observe
 }
 
 fetch4me_load_vars() {
-  settings="~/.fetch4merc"
+  settings=~/.fetch4merc
   if [ ! -e "$settings" ]
   then
     return 0
@@ -126,10 +126,10 @@ fetch4me_load_vars() {
   do
     if [ ${line:0:7} == "QQEDIR=" ]
     then
-      $QQEDIR="${line:7}"
+      QQEDIR="${line:7}"
     elif [ "${line:0:12}" == "GETELEMFUNC=" ]
     then
-      $GETELEMFUNC="${line:12}"
+      GETELEMFUNC="${line:12}"
     fi
   done < "$settings"
   return 0
