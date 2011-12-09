@@ -100,4 +100,4 @@ instance Monad3 m => Monad1 m where
 
 instance Monad1 m => Monad3 m where
     return3 = return1
-    atomb >=> btomc = undefined
+    atomb >=> btomc = \a -> ((m a) >>= atomb) >>= btomc
