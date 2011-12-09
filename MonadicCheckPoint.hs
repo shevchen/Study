@@ -81,28 +81,23 @@ class Monad3 m where
 
 instance Monad1 m => Monad2 m where
     return2 = return1
-
     join mma = mma >>= id
 
 instance Monad1 m => Functor m where
-    fmap f ma = undefined
+    fmap atob ma = ma >>= (return1 . atob)
 
 instance Monad1 m => Applicative m where
     pure = return1
-
-    f <*> ma = undefined
+    matob <*> ma = undefined
 
 instance Monad2 m => Monad1 m where
     return1 = return2
-
-    a >>= f = undefined
+    ma >>= atomb = undefined
 
 instance Monad3 m => Monad1 m where
     return1 = return3
-
-    ma >>= f = undefined
+    ma >>= atomb = (id >=> atomb) ma
 
 instance Monad1 m => Monad3 m where
     return3 = return1
-
-    f >=> g = undefined
+    atomb >=> btomc = undefined
