@@ -92,7 +92,7 @@ instance Monad1 m => Applicative m where
 
 instance Monad2 m => Monad1 m where
     return1 = return2
-    ma >>= atomb = undefined
+    ma >>= atomb = join (fmap atomb ma)
 
 instance Monad3 m => Monad1 m where
     return1 = return3
@@ -100,4 +100,4 @@ instance Monad3 m => Monad1 m where
 
 instance Monad1 m => Monad3 m where
     return3 = return1
-    atomb >=> btomc = \a -> ((m a) >>= atomb) >>= btomc
+    atomb >=> btomc = \a -> ((return1 a) >>= atomb) >>= btomc
