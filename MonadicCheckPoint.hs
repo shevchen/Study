@@ -50,7 +50,8 @@ instance Category (->) where
     (.) f g x = f (g x)
 
 --Laws:
---    ?
+--    forall x :: a, g :: (a -> b), f :: (b -> c) .
+--        (f . g) x == f (g x)
 
 (>>>) :: Category cat => cat a b -> cat b c -> cat a c
 a >>> b = b . a
@@ -59,7 +60,7 @@ class Monad1 m where
     return1 :: a -> m a
     (>>=) :: m a -> (a -> m b) -> m b
 
---(>>) :: ?
+(>>) :: Monad1 m => m a -> m b -> m b
 a >> b = a >>= (\_ -> b)
 
 class Functor m => Monad2 m where -- This means `fmap` is avaible
@@ -71,10 +72,13 @@ class Monad3 m where
     (>=>) :: (a -> m b) -> (b -> m c) -> (a -> m c)
 
 --Laws:
---   ?
+--    forall f :: (a -> m b), g :: (b -> m c) .
+--        f >=> g :: (a -> mc)
+--
+-- kinda stupid, need to think more
 
 -- Show the relation between Monad3 and Category:
---   ?
+-- ?
 
 -- Instances from Monad1 to anything are allowed to use do-syntax in
 -- right-hand side of the equations.
@@ -88,7 +92,7 @@ instance Monad1 m => Functor m where
 
 instance Monad1 m => Applicative m where
     pure = return1
-    matob <*> ma = undefined
+    m_atob <*> ma = undefined
 
 instance Monad2 m => Monad1 m where
     return1 = return2
