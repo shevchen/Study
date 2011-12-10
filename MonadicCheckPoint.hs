@@ -17,6 +17,9 @@ class Functor f where
 -- | 1         | 2
 -- V   fmap f  V
 -- F a -----> F b
+--
+-- fmap id = id
+
 
 {-
 class Functor f => Applicative f where
@@ -92,7 +95,7 @@ instance Monad1 m => Functor m where
 
 instance Monad1 m => Applicative m where
     pure = return1
-    m_atob <*> ma = undefined
+    m_atob <*> ma = ma >>= (\a -> (m_atob >>= (\f -> return1 (f a))))
 
 instance Monad2 m => Monad1 m where
     return1 = return2
