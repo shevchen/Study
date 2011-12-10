@@ -7,6 +7,12 @@ class Functor f where
 --Laws:
 --    forall f :: (a -> b), pac1 :: (a -> f a), pac2 :: (b -> f b) .
 --        fmap f . pac1 == pac2 . f
+--
+--    fmap id == id
+--
+--    forall f :: (a -> b), g :: (b -> c) .
+--        fmap (g . f) == (fmap g) . (fmap f)
+--
 -- Law of the commuting square:
 --       f
 -- a  -------> b
@@ -17,9 +23,6 @@ class Functor f where
 -- | 1         | 2
 -- V   fmap f  V
 -- F a -----> F b
---
--- fmap id = id
-
 
 {-
 class Functor f => Applicative f where
@@ -53,8 +56,11 @@ instance Category (->) where
     (.) f g x = f (g x)
 
 --Laws:
---    forall x :: a, g :: (a -> b), f :: (b -> c) .
---        (f . g) x == f (g x)
+--    forall f :: (a -> b) .
+--        f . id == id . f == f
+--
+--    forall f :: (a -> b), g :: (b -> c), h :: (c -> d) .
+--        (h . g) . f == h . (g . f)   
 
 (>>>) :: Category cat => cat a b -> cat b c -> cat a c
 a >>> b = b . a
@@ -75,13 +81,16 @@ class Monad3 m where
     (>=>) :: (a -> m b) -> (b -> m c) -> (a -> m c)
 
 --Laws:
---    forall f :: (a -> m b), g :: (b -> m c) .
---        f >=> g :: (a -> mc)
---
--- kinda stupid, need to think more
+--    forall f :: (a -> m b) .
+--        f >=> return3 == return3 >=> f == f   
+--    forall f :: (a -> m b), g :: (b -> m c), h :: (c -> m d) .
+--        (f >=> g) >=> h == f >=> (g >=> h)
 
 -- Show the relation between Monad3 and Category:
--- ?
+--     (Monad3 m) is a Category where (cat a b = \a -> m b) and the (.)'s arguments are reversed:
+--     return3   == id,
+--     (>=>) f g == (.) g f
+--     if (cat a b) is substituted with (\a -> m b)
 
 -- Instances from Monad1 to anything are allowed to use do-syntax in
 -- right-hand side of the equations.
