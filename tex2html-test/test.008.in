@@ -1,0 +1,13 @@
+Title
+
+One paragraph.
+Still same paragraph.
+
+\section{Foo}
+Two paragraph.
+
+\subsection{Foo}
+Three subsection.
+\subsection{Bar}
+
+Oh this is not a \section{Pony!}

@@ -1,0 +1,19 @@
+echo '<html>'
+echo '<head>'
+echo '    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />'
+read line
+echo "    <title>$line</title>"
+echo '</head>'
+echo '<body>'
+newpar=0
+while read line
+do
+  if [ "$line" == "" ]
+  then
+    newpar=1
+  else
+    echo "$line"
+  fi
+done
+echo '</body>'
+echo '</html>'
