@@ -1,0 +1,48 @@
+echo '<html>'
+echo '<head>'
+echo '    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />'
+read line
+echo "    <title>$line</title>"
+echo '</head>'
+echo '<body>'
+
+echo -e "$(cat)\n" |
+sed '
+  s/.*%.*//
+  s/\s\s*/ /g
+  s/^\s//
+  s/\s$//
+  /^\\section{.*}$/ {
+    s/^\\section{\(.*\)}$/\<h1\>\1\<\/h1\>/
+    x
+    s/..*/&\<\/p\>/p
+    s/.*//
+    x
+    p
+    d
+  }
+  /^\\subsection{.*}$/ {
+    s/^\\subsection{\(.*\)}$/\<h2\>\1\<\/h2\>/
+    x
+    s/..*/&\<\/p\>/p
+    s/.*//
+    x
+    p
+    d
+  }
+  /^\s*$/ {
+    x
+    s/..*/&\<\/p\>/p
+    d
+  }
+  x
+  /^\s*$/ {
+    x
+    s/.*/\<p\>&/
+    x
+    d
+  }
+'
+
+echo '</body>'
+echo '</html>'
