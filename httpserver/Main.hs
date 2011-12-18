@@ -5,6 +5,7 @@ import Network (listenOn, PortID(..), accept)
 import Network.Socket (Socket)
 import Control.Concurrent (forkIO)
 import System.IO
+import System.Directory (doesFileExist)
 
 main :: IO ()
 main = do
@@ -23,8 +24,9 @@ respond :: Handle -> IO ()
 respond socketHandle = do
   firstLine <- hGetLine socketHandle
   case (getData $ words firstLine) of
-    Just ("GET", address, "HTTP/1.1") -> respondToMsg socketHandle address >> respond socketHandle
-    _                                 -> respond socketHandle
+    Just ("GET", address, "HTTP/1.1") -> respondToMsg socketHandle address
+    _                                 -> return ()
+  respond socketHandle
 
 getData :: [String] -> Maybe (String, String, String)
 getData []     = Nothing
@@ -37,5 +39,10 @@ getRest method (x:(y:ys)) addr = getRest method (y:ys) (addr ++ x)
 
 respondToMsg :: Handle -> String -> IO ()
 respondToMsg socketHandle address = do
-  file <- openFile address ReadMode
+  exists <- doesFileExist address
+  if not exists then hPutStrLn socketHandle "HTTP/1.1 404 Not Found" else openFile address ReadMode >>= writeToFile socketHandle
+
+writeToFile :: Handle -> Handle -> IO ()
+writeToFile socketHandle file = do
+  hPutStrLn file "abc"
   hClose file
