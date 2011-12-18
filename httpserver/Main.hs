@@ -40,9 +40,16 @@ getRest method (x:(y:ys)) addr = getRest method (y:ys) (addr ++ x)
 respondToMsg :: Handle -> String -> IO ()
 respondToMsg socketHandle address = do
   exists <- doesFileExist address
-  if not exists then hPutStrLn socketHandle "HTTP/1.1 404 Not Found" else openFile address ReadMode >>= writeToFile socketHandle
+  if not exists then hPutStrLn socketHandle "HTTP/1.1 404 Not Found" else 
+    hPutStrLn socketHandle "HTTP/1.1 200 OK" >>
+    hPutStrLn socketHandle "" >>
+    openFile address ReadMode >>=
+    writeToFile socketHandle
 
 writeToFile :: Handle -> Handle -> IO ()
 writeToFile socketHandle file = do
-  hPutStrLn file "abc"
-  hClose file
+  isEnd <- hIsEOF file
+  if isEnd then hClose file else
+    hGetLine file >>=
+    hPutStrLn socketHandle >>
+    writeToFile socketHandle file
