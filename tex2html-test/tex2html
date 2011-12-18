@@ -46,6 +46,7 @@ sed '
     d
   }
 '
-
-echo '</body>'
-echo '</html>'
+cat << EOF
+</body>
+</html>
+EOF
