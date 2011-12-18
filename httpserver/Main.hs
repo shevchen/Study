@@ -37,14 +37,14 @@ getData _              = Nothing
 respondToMsg :: Handle -> String -> IO ()
 respondToMsg socketHandle address = do
   exists <- doesFileExist address
-  if not exists then {-hPutStrLn socketHandle-} putStrLn "HTTP/1.1 404 Not Found" else do
-    {-hPutStrLn socketHandle-} putStrLn "HTTP/1.1 200 OK"
-    {-hPutStrLn socketHandle-} putStrLn ""
-                               openFile address ReadMode >>= writeToFile socketHandle
+  if not exists then hPutStrLn socketHandle "HTTP/1.1 404 Not Found" else do
+    hPutStrLn socketHandle "HTTP/1.1 200 OK"
+    hPutStrLn socketHandle ""
+    openFile address ReadMode >>= writeToFile socketHandle
 
 writeToFile :: Handle -> Handle -> IO ()
 writeToFile socketHandle file = do
   isEnd <- hIsEOF file
   if isEnd then hClose file else do
-    hGetLine file >>= putStrLn --hPutStrLn socketHandle
+    hGetLine file >>= hPutStrLn socketHandle
     writeToFile socketHandle file
