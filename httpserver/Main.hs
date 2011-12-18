@@ -1,18 +1,40 @@
 module Main where
 
 import System.Environment (getArgs)
-import Network.Socket
-import Data.Word (Word16)
+import Network (listenOn, PortID(..), accept)
+import Network.Socket (Socket)
 import Control.Concurrent (forkIO)
+import System.IO (Handle, hGetLine)
 
+main :: IO ()
 main = do
   args <- getArgs
-  let port = read (head args)::Word16
-  mySocket <- socket AF_INET Stream defaultProtocol
-  bindSocket mySocket $ SockAddrInet (PortNum port) 0
-  listen mySocket 10
+  let port = read (head args)::Int
+  mySocket <- listenOn $ PortNumber $ fromIntegral port
   receiveMessages mySocket
-  putStrLn $ head args
 
+receiveMessages :: Socket -> IO ()
 receiveMessages mySocket = do
-  forkIO $ recv mySocket 1024 >>= putStrLn
+  (socketHandle, _, _) <- accept mySocket
+  forkIO $ respond socketHandle 
+  receiveMessages mySocket
+
+respond :: Handle -> IO ()
+respond socketHandle = do
+  firstLine <- hGetLine socketHandle
+  case (getData $ words firstLine) of
+    Nothing -> respond socketHandle
+    Just smth -> respondToMsg socketHandle smth >> respond socketHandle
+
+getData :: [String] -> Maybe (String, String, String)
+getData []     = Nothing
+getData (x:xs) = getRest x xs []
+
+getRest :: String -> [String] -> String -> Maybe (String, String, String)
+getRest method [] _            = Nothing
+getRest method (x:[]) addr     = Just (method, addr, x)
+getRest method (x:(y:ys)) addr = getRest method (y:ys) (addr ++ x)
+
+respondToMsg :: Handle -> (String, String, String) -> IO ()
+respondToMsg socketHandle (method, address, protocol) = do
+  putStrLn address
