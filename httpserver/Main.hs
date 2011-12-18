@@ -4,7 +4,7 @@ import System.Environment (getArgs)
 import Network (listenOn, PortID(..), accept)
 import Network.Socket (Socket)
 import Control.Concurrent (forkIO)
-import System.IO (Handle, hGetLine)
+import System.IO
 
 main :: IO ()
 main = do
@@ -23,8 +23,8 @@ respond :: Handle -> IO ()
 respond socketHandle = do
   firstLine <- hGetLine socketHandle
   case (getData $ words firstLine) of
-    Nothing -> respond socketHandle
-    Just smth -> respondToMsg socketHandle smth >> respond socketHandle
+    Just ("GET", address, "HTTP/1.1") -> respondToMsg socketHandle address >> respond socketHandle
+    _                                 -> respond socketHandle
 
 getData :: [String] -> Maybe (String, String, String)
 getData []     = Nothing
@@ -35,6 +35,7 @@ getRest method [] _            = Nothing
 getRest method (x:[]) addr     = Just (method, addr, x)
 getRest method (x:(y:ys)) addr = getRest method (y:ys) (addr ++ x)
 
-respondToMsg :: Handle -> (String, String, String) -> IO ()
-respondToMsg socketHandle (method, address, protocol) = do
-  putStrLn address
+respondToMsg :: Handle -> String -> IO ()
+respondToMsg socketHandle address = do
+  file <- openFile address ReadMode
+  hClose file
