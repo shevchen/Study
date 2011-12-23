@@ -9,7 +9,14 @@ type Varible = Variable
 data Term = Var Variable
           | Abs Variable Term
           | App Term Term
-          deriving (Show)
+
+toString :: Term -> String
+toString (Var a)   = a
+toString (Abs a b) = "lambda " ++ a ++ " -> (" ++ toString b ++ ")"
+toString (App a b) = "(" ++ toString a ++ " " ++ toString b ++ ")"
+
+instance Show Term where
+    show = show . toString
 
 -- Тип [ a ] == Типу List a
 -- значение [] == значению Nil
