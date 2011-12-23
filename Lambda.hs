@@ -13,7 +13,7 @@ data Term = Var Variable
 toString :: Term -> String
 toString (Var a)   = a
 toString (Abs a b) = "lambda " ++ a ++ " -> (" ++ toString b ++ ")"
-toString (App a b) = "(" ++ toString a ++ " " ++ toString b ++ ")"
+toString (App a b) = "(" ++ toString a ++ ") (" ++ toString b ++ ")"
 
 instance Show Term where
     show = show . toString

@@ -1,1 +1,3 @@
-(\a. b) c
+let a = f (x x) in
+let b = \g . y m a in
+\ a c -> a b

@@ -67,6 +67,7 @@ termparser = do
 main :: IO ()
 main = do
     args <- getArgs
-    case parse (m_whiteSpace >> onlyApply <* eof) "" (head args) of
+    source <- readFile $ head args
+    case parse (m_whiteSpace >> onlyApply <* eof) "" source of
         Left err  -> print err
-        Right ans -> print ans
+        Right ans -> print (normal' ans)
