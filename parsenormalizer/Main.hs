@@ -31,7 +31,7 @@ onlyApply = chainl1 termparser (do
 
 termparser :: Parser Term
 termparser = do
-    { term <- m_parens termparser
+    { term <- m_parens onlyApply
     ; return term 
     }
     <|> do
@@ -50,9 +50,6 @@ termparser = do
     ; term <- onlyApply
     ; return (Abs var term)
     }
-    -- <|> do
-    --{ onlyApply
-    --}
     <|> do
     { a <- m_identifier
     ; return (Var a)
@@ -61,6 +58,6 @@ termparser = do
 main :: IO ()
 main = do
     args <- getArgs
-    case parse termparser "" (head args) of
+    case parse (m_whiteSpace >> onlyApply <* eof) "" (head args) of
         Left err -> print err
         Right ans -> print ans
