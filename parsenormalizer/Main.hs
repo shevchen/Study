@@ -25,14 +25,26 @@ TokenParser{ parens = m_parens
 
 onlyApply :: Parser Term
 onlyApply = chainl1 termparser (do
-    { m_whiteSpace
-    ; return App
-    })
+    m_whiteSpace
+    return App
+    )
+
+onlyAbstract :: Parser Term
+onlyAbstract = do
+    var <- m_identifier
+    do 
+        { (m_reservedOp ".") <|> (m_reservedOp "->")
+        ; term <- onlyApply
+        ; return (Abs var term)
+        }
+        <|> do
+        { other <- onlyAbstract
+        ; return (Abs var other)
+        }
 
 termparser :: Parser Term
 termparser = do
-    { term <- m_parens onlyApply
-    ; return term 
+    { m_parens onlyApply >>= return
     }
     <|> do
     { m_reserved "let"
@@ -45,10 +57,7 @@ termparser = do
     }
     <|> do
     { m_reservedOp "\\"
-    ; var <- m_identifier
-    ; (m_reservedOp ".") <|> (m_reservedOp "->")
-    ; term <- onlyApply
-    ; return (Abs var term)
+    ; onlyAbstract
     }
     <|> do
     { a <- m_identifier
@@ -59,5 +68,5 @@ main :: IO ()
 main = do
     args <- getArgs
     case parse (m_whiteSpace >> onlyApply <* eof) "" (head args) of
-        Left err -> print err
+        Left err  -> print err
         Right ans -> print ans
