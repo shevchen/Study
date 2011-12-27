@@ -55,7 +55,7 @@ dropWhile :: (a -> Bool) -> [a] -> [a]
 dropWhile pred []     = []
 dropWhile pred (x:xs) = if pred x then dropWhile pred xs else x:xs
 
--- Разбить список в пару (найбольший префикс удовлетворяющий p, всё остальное)
+-- Разбить список в пару (наибольший префикс удовлетворяющий p, всё остальное)
 span :: (a -> Bool) -> [a] -> ([a], [a])
 span pred []     = ([], [])
 span pred (x:xs) = if pred x then (x:first, second) else ([], x:xs)
@@ -66,13 +66,17 @@ span pred (x:xs) = if pred x then (x:first, second) else ([], x:xs)
 break :: (a -> Bool) -> [a] -> ([a], [a])
 break = span
 
+otherwise = True
+
 -- n-ый элемент списка (считая с нуля)
 (!!) :: [a] -> Integer -> a
 [] !! n     = error "!!: empty list"
 (x:[]) !! n = if n == 0 then x else undefined
-(x:xs) !! n = if n < 0 then undefined else if n == 0 then x else xs !! (n - 1)
+(x:xs) !! n | n < 0     = undefined
+            | n == 0    = x
+            | otherwise = xs !! (n - 1)
 
--- Список задом на перёд
+-- Список задом наперёд
 reverse :: [a] -> [a]
 reverse l = reverse' l []
 

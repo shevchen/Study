@@ -83,7 +83,7 @@ fixedPoint f g = if g ~= f g
 sqrt' x = fixedPoint (\y -> x/y) 1 -- Обычно не сходится.
 sqrt x = fixedPoint (averageDamp (\y -> x/y)) 1 -- А этот работает.
 
--- Взятие производной: нам дали функцию, а мы вернули тоже взяли да
+-- Взятие производной: нам дали функцию, а мы тоже взяли да
 -- и вернули функцию.
 deriv :: (Double -> Double) -> (Double -> Double)
 deriv f x = (f (x + eps) - f x) / eps
@@ -171,7 +171,7 @@ fromInt 0 = Zero                   -- Этот конструктор (Zero) -- 
                                    -- типа Nat.
 fromInt a = Succ $ fromInt (a - 1) -- А этот конструктор сильно напоминает функцию.
 
-toInt Zero = 0
+toInt Zero     = 0
 toInt (Succ a) = 1 + toInt a
 
 -- Сложение (эквивалентные определения)
@@ -180,12 +180,12 @@ plus Zero b     = b
 plus (Succ a) b = plus a (Succ b)
 
 plus' a b = case a of
-    Zero -> b
+    Zero     -> b
     (Succ a) -> plus' a (Succ b)
 
 -- Другое сложение (ведёт себя иначе, но
 -- результат такой же)
-plus'' Zero b = Zero
+plus'' Zero b     = b
 plus'' (Succ a) b = Succ $ plus'' a b
 
 -- * умножение (через сложение)
@@ -193,8 +193,8 @@ mul :: Nat -> Nat -> Nat
 mul a b = mul' a b Zero
 
 mul' :: Nat -> Nat -> Nat -> Nat
-mul' Zero _ acc = acc
-mul' _ Zero acc = acc
+mul' Zero _ acc     = acc
+mul' _ Zero acc     = acc
 mul' (Succ a) b acc = mul' a b (plus acc b)
 
 -- * вычитание (без использования предыдущих)
@@ -202,8 +202,8 @@ mul' (Succ a) b acc = mul' a b (plus acc b)
 --                   | 0        иначе
 
 sub :: Nat -> Nat -> Nat
-sub a Zero = a
-sub Zero _ = Zero
+sub a Zero            = a
+sub Zero _            = Zero
 sub (Succ a) (Succ b) = sub a b 
 
 -- * деление (через вычитание, остаток можно выкинуть)
@@ -212,13 +212,9 @@ div a b = div' a b Zero
 
 div' :: Nat -> Nat -> Nat -> Nat
 div' _ Zero _ = Zero
-div' a b acc | less a b = acc 
-             | otherwise = div' (sub a b) b (plus (Succ Zero) acc)
-
-less :: Nat -> Nat -> Bool
-less Zero _ = True 
-less _ Zero = False
-less (Succ a) (Succ b) = less a b
+div' a b acc  = case sub (Succ a) b of
+              Zero   -> acc 
+              Succ n -> div' n b (Succ acc)
 
 -------------------------------------------
 -- Избавляемся от встроенных типов.
@@ -234,45 +230,41 @@ instance Show Positive where
     show = show . pToInt 
 
 pToInt :: Positive -> Int
-pToInt One = 1
+pToInt One       = 1
 pToInt (PSucc a) = 1 + (pToInt a)
 
 pFromInt :: Int -> Positive
-pFromInt x | x <= 1 = One
-           | otherwise = PSucc (pFromInt (x - 1))
+pFromInt x | x == 1    = One
+           | otherwise = PSucc $ pFromInt (x - 1)
 
 -- pApplyBinary :: (Nat -> Nat -> a) -> Positive -> Positive -> a
 -- pApplyBinary f p1 p2 = f (pToInt p1) (pToInt p2)
 
-pless :: Positive -> Positive -> Bool
-pless _ One = False
-pless One _ = True 
-pless (PSucc a) (PSucc b) = pless a b
-
 psub :: Positive -> Positive -> Positive
-psub One _ = One
-psub (PSucc a) One = a
+psub One _               = One
+psub (PSucc a) One       = a
 psub (PSucc a) (PSucc b) = psub a b
 
 pplus :: Positive -> Positive -> Positive
-pplus One b = PSucc b 
+pplus One b       = PSucc b 
 pplus (PSucc a) b = pplus a (PSucc b)
 
 pmul :: Positive -> Positive -> Positive
 pmul a b = pmul' a b One -- extra One
 
 pmul' :: Positive -> Positive -> Positive -> Positive
-pmul' One One acc = acc -- subtracting One
-pmul' One b acc = pmul' b One acc
-pmul' (PSucc a) b acc = pmul' a b (pplus acc b)
+pmul' One One acc       = acc -- subtracting One
+pmul' One (PSucc a) acc = pplus acc a
+pmul' (PSucc a) b acc   = pmul' a b (pplus acc b)
 
 pdiv :: Positive -> Positive -> Positive
-pdiv a b = pdiv' (psub a b) b One
+pdiv a b | pless a (pplus b b) = One
+         | otherwise           = pdiv' (psub a b) b One
 
 pdiv' :: Positive -> Positive -> Positive -> Positive
 pdiv' a One acc = pplus acc a
-pdiv' a b acc | pless a b = acc
-              | otherwise = pdiv' (psub a b) b (pplus acc One)
+pdiv' a b acc   | pless a b = acc
+                | otherwise = pdiv' (psub a b) b (PSucc acc)
 
 data Integer = IZero
              | Plus Positive
@@ -281,57 +273,58 @@ instance Show Integer where
     show = show . zToInt
 
 zToInt :: Integer -> Int
-zToInt IZero = 0
+zToInt IZero     = 0
 zToInt (Minus a) = - (zToInt (Plus a))
-zToInt (Plus a) = pToInt a
+zToInt (Plus a)  = pToInt a
 
 zFromInt :: Int -> Integer
-zFromInt 0 = IZero
-zFromInt x | x > 0 = Plus (pFromInt x)
-           | otherwise = Minus (pFromInt (-x))
+zFromInt 0         = IZero
+zFromInt x | x > 0     = Plus $ pFromInt x
+           | otherwise = Minus $ pFromInt (-x)
 
 -- Реализуйте:
 -- * сложение
 zplus :: Integer -> Integer -> Integer
-zplus IZero a = a
-zplus a IZero = a 
-zplus (Plus a) (Plus b) = Plus (pplus a b)
-zplus (Plus a) (Minus b) = zsub (Plus a) (Plus b)
-zplus (Minus a) (Plus b) = zsub (Plus b) (Plus a)
-zplus (Minus a) (Minus b) = znegate (zplus (Plus a) (Plus b)) 
+zplus IZero a             = a
+zplus a IZero             = a 
+zplus (Plus a) (Plus b)   = Plus $ pplus a b
+zplus (Plus a) (Minus b)  = zsub (Plus a) (Plus b)
+zplus (Minus a) (Plus b)  = zsub (Plus b) (Plus a)
+zplus (Minus a) (Minus b) = znegate $ zplus (Plus a) (Plus b)
 
 znegate :: Integer -> Integer
-znegate IZero = IZero
-znegate (Plus a) = Minus a
+znegate IZero     = IZero
+znegate (Plus a)  = Minus a
 znegate (Minus a) = Plus a
 
 -- * умножение
 zmul :: Integer -> Integer -> Integer
-zmul IZero _ = IZero
-zmul _ IZero = IZero
-zmul (Minus a) b = znegate (zmul (Plus a) b)
-zmul a (Minus b) = znegate (zmul a (Plus b))
-zmul (Plus a) (Plus b) = Plus (pmul a b)
+zmul IZero _           = IZero
+zmul _ IZero           = IZero
+zmul (Minus a) b       = znegate $ zmul (Plus a) b
+zmul a (Minus b)       = znegate $ zmul a (Plus b)
+zmul (Plus a) (Plus b) = Plus $ pmul a b
 
 -- * вычитание
 zsub :: Integer -> Integer -> Integer
-zsub IZero a = znegate a
-zsub a IZero = a
-zsub (Plus One) (Plus One) = IZero
-zsub (Plus One) (Plus (PSucc b)) = znegate (Plus b) 
-zsub (Plus (PSucc a)) (Plus One) = Plus a
+zsub IZero a                           = znegate a
+zsub a IZero                           = a
+zsub (Plus One) (Plus One)             = IZero
+zsub (Plus One) (Plus (PSucc b))       = znegate $ Plus b
+zsub (Plus (PSucc a)) (Plus One)       = Plus a
 zsub (Plus (PSucc a)) (Plus (PSucc b)) = zsub (Plus a) (Plus b)
-zsub (Plus a) (Minus b) = zplus (Plus a) (Plus b)
-zsub (Minus a) (Plus b) = znegate (zplus (Plus a) (Plus b))
-zsub (Minus a) (Minus b) = zsub (Plus b) (Plus a)
+zsub (Plus a) (Minus b)                = zplus (Plus a) (Plus b)
+zsub (Minus a) (Plus b)                = znegate $ zplus (Plus a) (Plus b)
+zsub (Minus a) (Minus b)               = zsub (Plus b) (Plus a)
 
 -- * деление
 zdiv :: Integer -> Integer -> Integer
-zdiv a IZero = IZero
-zdiv IZero a = IZero
-zdiv (Minus a) b = znegate (zdiv (Plus a) b)
-zdiv a (Minus b) = znegate (zdiv a (Plus b))
-zdiv (Plus a) (Plus b) = Plus (pdiv a b)
+zdiv a IZero           = IZero
+zdiv IZero a           = IZero
+zdiv (Minus a) b       = znegate $ zdiv (Plus a) b
+zdiv a (Minus b)       = znegate $ zdiv a (Plus b)
+zdiv (Plus a) (Plus b) | pless a b = IZero
+                       | otherwise = Plus $ pdiv a b 
 
 -------------------------------------------
 -- Избавляемся от встроенных типов.
@@ -344,42 +337,48 @@ data Rational = Rational Integer Positive
     deriving Show
 
 peq :: Positive -> Positive -> Bool
-peq One One = True
-peq One b = False
-peq a One = False
+peq One One             = True
+peq One _               = False
+peq _ One               = False
 peq (PSucc a) (PSucc b) = peq a b
 
+pless :: Positive -> Positive -> Bool
+pless One One             = False
+pless One _               = True
+pless _ One               = False
+pless (PSucc a) (PSucc b) = pless a b
+
 pgcd :: Positive -> Positive -> Positive
-pgcd a b | peq a b = a
+pgcd a b | peq a b   = a
          | pless a b = pgcd a (psub b a)
          | otherwise = pgcd b (psub a b) 
 
 rnorm :: Rational -> Rational
-rnorm (Rational IZero _) = Rational IZero One
+rnorm (Rational IZero _)     = Rational IZero One
 rnorm (Rational (Minus a) b) = Rational (Minus (pdiv a divisor)) (pdiv b divisor)
                              where divisor = pgcd a b
-rnorm (Rational (Plus a) b) = Rational (Plus (pdiv a divisor)) (pdiv b divisor)
-                            where divisor = pgcd a b
+rnorm (Rational (Plus a) b)  = Rational (Plus (pdiv a divisor)) (pdiv b divisor)
+                             where divisor = pgcd a b
 
 -- Реализуйте:
 -- * сложение
 rplus :: Rational -> Rational -> Rational
-rplus (Rational i1 p1) (Rational i2 p2) = rnorm (Rational (zplus (zmul i1 (Plus p2)) (zmul i2 (Plus p1))) (pmul p1 p2))
+rplus (Rational i1 p1) (Rational i2 p2) = rnorm $ Rational (zplus (zmul i1 (Plus p2)) (zmul i2 (Plus p1))) (pmul p1 p2)
 
 -- * умножение
 rmul :: Rational -> Rational -> Rational
-rmul (Rational i1 p1) (Rational i2 p2) = rnorm (Rational (zmul i1 i2) (pmul p1 p2))
+rmul (Rational i1 p1) (Rational i2 p2) = rnorm $ Rational (zmul i1 i2) (pmul p1 p2)
 
 -- * вычитание
 rsub :: Rational -> Rational -> Rational
-rsub (Rational i1 p1) (Rational i2 p2) = rnorm (Rational (zsub (zmul i1 (Plus p2)) (zmul i2 (Plus p1))) (pmul p1 p2))
+rsub (Rational i1 p1) (Rational i2 p2) = rnorm $ Rational (zsub (zmul i1 (Plus p2)) (zmul i2 (Plus p1))) (pmul p1 p2)
 
 -- * деление
 rdiv :: Rational -> Rational -> Rational
-rdiv (Rational i1 p1) (Rational i2 p2) = case (zmul i2 (Plus p1)) of
-                                         Plus a -> rnorm (Rational (zmul i1 (Plus p2)) a)
-                                         Minus a -> rnorm (Rational (zmul i1 (Minus p2)) a)
-                                         _ -> Rational IZero One 
+rdiv (Rational i1 p1) (Rational i2 p2) = case zmul i2 (Plus p1) of
+                                         Plus a  -> rnorm $ Rational (zmul i1 (Plus p2)) a
+                                         Minus a -> rnorm $ Rational (zmul i1 (Minus p2)) a
+                                         _       -> Rational IZero One 
 
 -------------------------------------------
 -- Конструируем типы.
@@ -420,7 +419,7 @@ example5'1 x = x
 example5'2 x = Succ Zero
 
 -- Следите за руками:
-example6 x = let (Pair a b) = example5 x in a + (toInt b)
+example6 x  = let (Pair a b) = example5 x in a + (toInt b)
 example6' x = let a = example5'1 x
                   b = example5'2 x in a + (toInt b)
 
@@ -509,14 +508,14 @@ data Maybe a = Just a
 -- Реализуйте функцию
 find :: (a -> Bool) -> List a -> Maybe a
 find p Nil = Nothing
-find p (Cons a list) | p a = Just a
+find p (Cons a list) | p a       = Just a
                      | otherwise = find p list 
 -- которая ищет в списке t элемент, удовлетворяющий предикату p (если такой есть).
 
 -- Реализуйте функцию
 filter :: (a -> Bool) -> List a -> List a
 filter p Nil = Nil
-filter p (Cons a list) | p a = Cons a (filter p list)
+filter p (Cons a list) | p a       = Cons a (filter p list)
                        | otherwise = filter p list 
 -- которая генерирует список из элементов t, удовлетворяющих предикату f.
 
@@ -525,7 +524,7 @@ isJust (Just _) = True
 
 -- При помощи filter, isJust и map реализуйте разумную функцию с типом
 maybefilter :: List (Maybe a) -> List a
-maybefilter list = map getJust (filter isJust list)
+maybefilter list = map getJust $ filter isJust list
 
 getJust :: (Maybe a) -> a
 getJust (Just a) = a
@@ -539,7 +538,7 @@ gfilter :: (a -> Maybe b) -> List a -> List b
 gfilter f Nil = Nil
 gfilter f (Cons a list) = case (f a) of
                           Just b -> Cons b (gfilter f list)
-                          _ -> gfilter f list
+                          _      -> gfilter f list
 
 -- При помощи неё реализуйте maybefilter':
 maybefilter' :: List (Maybe a) -> List a
@@ -554,10 +553,10 @@ data Empty --Пустое множество
 
 -- Реализуйте
 maybe2either :: Maybe a -> Either Empty a
-maybe2either Nothing = (let f = f in f)
+maybe2either Nothing  = let f = f in Left f
 maybe2either (Just a) = Right a
 
 -- Реализуйте
 emap :: (a -> a') -> (b -> b') -> Either a b -> Either a' b'
-emap f g (Left a) = Left (f a)
+emap f g (Left a)  = Left (f a)
 emap f g (Right b) = Right (g b)
