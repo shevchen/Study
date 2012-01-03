@@ -85,10 +85,9 @@ f ∘ g = λ x → f (g x)
 -- ¬impl : {A B : Set} → (A → B) → (¬ B → ¬ A)
 -- ¬impl f = refl
 
--- TODO
 -- Contradiction implies anything.
--- contradiction : {A B : Set} → A → ¬ A → B
--- contradiction a nota = ⊥
+contradiction : {A B : Set} → A → ¬ A → B
+contradiction a nota = (⊥-elim ∘ nota) a
 
 -------------------------------------------
 
