@@ -208,7 +208,7 @@ head : ∀ {A n} → Vec A (succ n) → A
 head (a :: as) = a
 
 -- try this:
---test1 = head [0]
+test1 = head [0]
 
 -- Finite type. Each Fin n has exactly n elements.
 data Fin : ℕ → Set where
@@ -217,10 +217,12 @@ data Fin : ℕ → Set where
 
 -- Get an element from a Vec by its number.
 lookup : ∀ {A n} → Fin n → Vec A n → A
-lookup = {!!}
+lookup fzero (a :: as)     = a
+lookup (fsucc f) (a :: as) = lookup f as 
 
 list2vec : ∀ {A} → (l : List A) → Vec A (length l)
-list2vec = {!!}
+list2vec [] = [0]
+list2vec (a ∷ as) = a :: (list2vec as)
 
 data _×_ (A B : Set) : Set where
   _,_ : A → B → A × B
@@ -235,7 +237,7 @@ infixl 15 _×_
 
 data _<_ : ℕ → ℕ → Set where
   z<s : {n : ℕ} → zero < succ n
-  s<s  : {n m : ℕ} → n < m → succ n < succ m
+  s<s : {n m : ℕ} → n < m → succ n < succ m
 
 _≤_ : ℕ → ℕ → Set
 a ≤ b = Either (a ≡ b) (a < b)
