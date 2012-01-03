@@ -112,18 +112,21 @@ assoc {zero} {y} {z} = refl
 assoc {succ x} {y} {z} = lemma-succ (assoc {x} {y} {z})
 
 y=y+0 : {y : ℕ} → y ≡ y + zero
-y=y+0 {zero} = refl
-y=y+0 {succ y} = lemma-succ (y=y+0 y)
+y=y+0 {zero}   = refl
+y=y+0 {succ y} = lemma-succ (y=y+0 {y})
 
 sy=y+1 : {y : ℕ} → succ y ≡ y + succ zero
-sy=y+1 = lemma-succ (y=y+0 y)
+sy=y+1 {zero}   = refl
+sy=y+1 {succ y} = lemma-succ (sy=y+1 {y})
 
 sx+y=x+sy : {x y : ℕ} → succ x + y ≡ x + succ y
-sx+y=x+sy = {!!}
+sx+y=x+sy {zero} {y}   = refl
+sx+y=x+sy {succ x} {y} = lemma-succ (sx+y=x+sy {x} {y})
 
 -- (*) Commutativity.
 comm : {x y : ℕ} → x + y ≡ y + x
-comm = {!!}
+comm {zero} {y}   = y=y+0 {y}
+comm {succ x} {y} = (lemma-succ (comm {x} {y}))~(sx+y=x+sy {y} {x})
 -- Hint: dpohaboea=+=absfaojdf
 -- Caesar +1 code.
 --
