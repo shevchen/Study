@@ -80,13 +80,15 @@ f ∘ g = λ x → f (g x)
 ¬ : Set → Set
 ¬ a = a → ⊥
 
+-- TODO
 -- If A implies B then not B implies not A.
-¬impl : {A B : Set} → (A → B) → (¬ B → ¬ A)
-¬impl f = (B → ⊥) → (A → ⊥)
+-- ¬impl : {A B : Set} → (A → B) → (¬ B → ¬ A)
+-- ¬impl f = refl
 
+-- TODO
 -- Contradiction implies anything.
-contradiction : {A B : Set} → A → ¬ A → B
-contradiction a nota = ⊥
+-- contradiction : {A B : Set} → A → ¬ A → B
+-- contradiction a nota = ⊥
 
 -------------------------------------------
 
@@ -208,7 +210,8 @@ head : ∀ {A n} → Vec A (succ n) → A
 head (a :: as) = a
 
 -- try this:
-test1 = head [0]
+-- test1 = head [0]
+-- error: zero != succ anything
 
 -- Finite type. Each Fin n has exactly n elements.
 data Fin : ℕ → Set where
@@ -242,10 +245,11 @@ data _<_ : ℕ → ℕ → Set where
 _≤_ : ℕ → ℕ → Set
 a ≤ b = Either (a ≡ b) (a < b)
 
+-- TODO
 -- (**) If you give me a list and a proof that its length is not less than n
 -- I'll give you a tuple (prefix of length n, suffix)
-cuthead : ∀ {A} {n : ℕ} → (l : List A) → n ≤ length l → Vec A n × List A
-cuthead = {!!}
+-- cuthead : ∀ {A} {n : ℕ} → (l : List A) → n ≤ length l → Vec A n × List A
+-- cuthead = {!!}
 
 -- (***) Previous definition does not guarantee correct split
 -- (e.g. you can make up any suffix). Define a better one.
