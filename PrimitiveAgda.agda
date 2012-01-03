@@ -13,19 +13,20 @@ module PrimitiveAgda where
 -- Martin-Lof equivalence (a special version for values only, not for types, kinds, sorts and so on).
 data _≡_ {A : Set} (x : A) : A → Set where
   refl : x ≡ x
+--- A constructor that allows only identical arguments.
 
 -- Properties.
 ≡refl : {A : Set}{a b : A} → a ≡ b → b ≡ a
 ≡refl refl = refl
 
 ≡trans : {A : Set}{a b c : A} → a ≡ b → b ≡ c → a ≡ c
-≡trans = {!!}
+≡trans refl refl = refl
 
 _~_ : {A : Set}{a b c : A} → a ≡ b → b ≡ c → a ≡ c
 _~_ = ≡trans
 
 cong : {A B : Set} {a b : A} → (f : A → B) → a ≡ b → f a ≡ f b
-cong = {!!}
+cong f refl = refl
 
 -- ⊥ is \bot
 -- Empty type.
@@ -56,7 +57,7 @@ data ℕ : Set where
   succ : ℕ → ℕ
 
 notzero : ℕ → Bool
-notzero zero = false
+notzero zero     = false
 notzero (succ n) = true
 
 ---------------------------------------------------------
@@ -64,7 +65,7 @@ notzero (succ n) = true
 
 kindadiv : (a : ℕ) → (b : ℕ) → { x : isTrue (notzero b) } → ℕ
 kindadiv a zero {()}
-kindadiv a (succ b) = a 
+kindadiv a (succ b) = a
 
 --------------------------------------------------------
 
