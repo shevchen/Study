@@ -82,11 +82,11 @@ f ∘ g = λ x → f (g x)
 
 -- If A implies B then not B implies not A.
 ¬impl : {A B : Set} → (A → B) → (¬ B → ¬ A)
-¬impl f = {!!}
+¬impl f = (B → ⊥) → (A → ⊥)
 
 -- Contradiction implies anything.
 contradiction : {A B : Set} → A → ¬ A → B
-contradiction a nota = {!!}
+contradiction a nota = ⊥
 
 -------------------------------------------
 
@@ -113,10 +113,10 @@ assoc {succ x} {y} {z} = lemma-succ (assoc {x} {y} {z})
 
 y=y+0 : {y : ℕ} → y ≡ y + zero
 y=y+0 {zero} = refl
-y=y+0 {succ y} = {!!}
+y=y+0 {succ y} = lemma-succ (y=y+0 y)
 
 sy=y+1 : {y : ℕ} → succ y ≡ y + succ zero
-sy=y+1 = {!!}
+sy=y+1 = lemma-succ (y=y+0 y)
 
 sx+y=x+sy : {x y : ℕ} → succ x + y ≡ x + succ y
 sx+y=x+sy = {!!}
@@ -237,7 +237,7 @@ data _<_ : ℕ → ℕ → Set where
 _≤_ : ℕ → ℕ → Set
 a ≤ b = Either (a ≡ b) (a < b)
 
--- (**) If you give me a list and a proof that its length is less than n
+-- (**) If you give me a list and a proof that its length is not less than n
 -- I'll give you a tuple (prefix of length n, suffix)
 cuthead : ∀ {A} {n : ℕ} → (l : List A) → n ≤ length l → Vec A n × List A
 cuthead = {!!}
