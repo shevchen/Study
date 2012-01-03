@@ -101,8 +101,9 @@ permutations [] = [[]]
 permutations (x:xs) = permutations' x [] xs
 
 permutations' :: a -> [a] -> [a] -> [[a]]
-permutations' x xs []     = map ((:) x) (permutations xs)
-permutations' x xs (y:ys) = map ((:) x) (permutations (xs ++ (y:ys))) ++ (permutations' y (x:xs) ys)
+-- Текущий первый, бывшие первые, остальные
+permutations' x xs []     = map ((:) x) $ permutations xs
+permutations' x xs (y:ys) = map ((:) x) (permutations $ xs ++ (y:ys)) ++ (permutations' y (x:xs) ys)
 
 -- Повторяет элемент бесконечное число раз
 repeat :: a -> [a]
@@ -200,7 +201,7 @@ instance Monoid Rational where
 
 instance Monoid MulRational where
     mzero = RMult 1
-    mappend (RMult a) (RMult b) = RMult (a * b)
+    mappend (RMult a) (RMult b) = RMult $ a * b
 
 instance Monoid MulInteger where
     mzero = Mult 1
@@ -230,9 +231,9 @@ mtfold (MNode a l r) = a `mappend` (mtfold l) `mappend` (mtfold r)
 -- констреинтах Monoid a быть не должно.
 -- Для широты фантазии в терме можно использовать классы типов, определённые в любом
 -- месте этого файла.
-mterm :: MTree a -> MTree a
-mterm MLeaf = MLeaf
-mterm (MNode x t1 t2) = MNode x t1 t2
+mterm :: MTree a -> a
+mterm MLeaf = mzero
+mterm (MNode x t1 t2) = mterm t1
 
 -- (**) Разберитесь чем отличаются эти определения.
 -- "Скомпилируйте" их в наш гипотетический язык программирования с
@@ -311,21 +312,21 @@ matsum :: Matrix a -> Matrix a -> Matrix a
 matsum (Matrix []) (Matrix [])         = Matrix []
 matsum (Matrix []) _                   = undefined
 matsum _ (Matrix [])                   = undefined
-matsum (Matrix (x:xs)) (Matrix (y:ys)) = Matrix ((scalarsum x y):(getTable (matsum (Matrix xs) (Matrix ys))))
+matsum (Matrix (x:xs)) (Matrix (y:ys)) = Matrix $ (sum x y):(getTable $ matsum (Matrix xs) (Matrix ys))
 
-scalarsum :: Monoid a => [a] -> [a] -> [a]
-scalarsum [] []         = []
-scalarsum [] _          = undefined
-scalarsum _ []          = undefined
-scalarsum (x:xs) (y:ys) = (mappend x y):(scalarsum xs ys)
+sum :: Monoid a => [a] -> [a] -> [a]
+sum [] []         = []
+sum [] _          = undefined
+sum _ []          = undefined
+sum (x:xs) (y:ys) = (mappend x y):(sum xs ys)
 
-matscalarmul :: Ring a => a -> Matrix a -> Matrix a
+matscalarmul :: a -> Matrix a -> Matrix a
 matscalarmul _ (Matrix [])     = Matrix []
-matscalarmul x (Matrix (y:ys)) = Matrix ((map (rmul x) y):(getTable (matscalarmul x (Matrix ys))))
+matscalarmul x (Matrix (y:ys)) = Matrix $ (map (rmul x) y):(getTable $ matscalarmul x (Matrix ys))
 
 matmul :: Matrix a -> Matrix a -> Matrix a
-matmul (Matrix m1) (Matrix m2) = if has then Matrix (matrixPrepend (map (multiplicate fc) m1) (getTable (matmul (Matrix m1) (Matrix other)))) else Matrix []
-                                    where (fc, other, has) = firstColumn m2
+matmul (Matrix m1) (Matrix m2) = Matrix $ matrixPrepend (map (multiplicate fc) m1) (getTable $ matmul (Matrix m1) (Matrix other))
+                                     where (fc, other) = firstColumn m2
 
 multiplicate :: Ring a => [a] -> [a] -> a
 multiplicate [] [] = mzero
@@ -337,12 +338,15 @@ isEmpty :: [a] -> Bool
 isEmpty [] = True
 isEmpty _  = False
 
-firstColumn :: [[a]] -> ([a], [[a]], Bool)
-firstColumn []          = ([], [], True) 
-firstColumn ([]:xs)     = if has && not (isEmpty fc) then undefined else (fc, other, False)
-                          where (fc, other, has) = firstColumn xs
-firstColumn ((y:ys):xs) = if not has then undefined else (y:fc, ys:other, True)
-                          where (fc, other, has) = firstColumn xs
+firstColumn :: [[a]] -> ([a], [[a]])
+-- Первый столбец, всё остальное
+firstColumn []          = ([], [])
+firstColumn ([]    :xs) = if isEmpty fc then ([], []) else undefined
+                              where (fc, other) = firstColumn xs
+firstColumn ((y:[]):xs) = if isEmpty other then (y:fc, []) else undefined
+                              where (fc, other) = firstColumn xs
+firstColumn ((y:ys):xs) = (y:fc, ys:other) 
+                              where (fc, other) = firstColumn xs
 
 matrixPrepend :: [a] -> [[a]] -> [[a]]
 matrixPrepend [] []         = []
