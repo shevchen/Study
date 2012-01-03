@@ -80,10 +80,9 @@ f ∘ g = λ x → f (g x)
 ¬ : Set → Set
 ¬ a = a → ⊥
 
--- TODO
 -- If A implies B then not B implies not A.
--- ¬impl : {A B : Set} → (A → B) → (¬ B → ¬ A)
--- ¬impl f = refl
+¬impl : {A B : Set} → (A → B) → (¬ B → ¬ A)
+¬impl f = λ g → g ∘ f
 
 -- Contradiction implies anything.
 contradiction : {A B : Set} → A → ¬ A → B
