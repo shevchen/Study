@@ -235,6 +235,7 @@ snd : ∀ {A B} → A × B → B
 snd (a , b) = b
 
 infixl 15 _×_
+infixl 15 _,_
 
 data _<_ : ℕ → ℕ → Set where
   z<s : {n : ℕ} → zero < succ n
@@ -243,11 +244,21 @@ data _<_ : ℕ → ℕ → Set where
 _≤_ : ℕ → ℕ → Set
 a ≤ b = Either (a ≡ b) (a < b)
 
--- TODO
+lemma-le : ∀ {m n} → (succ m ≤ succ n) → (m ≤ n)
+lemma-le (left eq)          = left (lemma-unsucc eq)
+lemma-le (right (s<s less)) = right less
+
+lemma-list : ∀ {A n} {a : A} {as : List A} → (succ n ≤ length (a ∷ as)) → (n ≤ length as)
+lemma-list = lemma-le
+
+appendToFirst : ∀ {n} {A B : Set} → (a : A) → Vec A n × B → Vec A (succ n) × B
+appendToFirst a (vector , b) = (a :: vector , b)
+
 -- (**) If you give me a list and a proof that its length is not less than n
 -- I'll give you a tuple (prefix of length n, suffix)
--- cuthead : ∀ {A} {n : ℕ} → (l : List A) → n ≤ length l → Vec A n × List A
--- cuthead = {!!}
+cuthead : ∀ {A} {n : ℕ} → (l : List A) → n ≤ length l → Vec A n × List A
+cuthead {_} {zero} list _        = ([0] , list)
+cuthead {_} {succ n} (a ∷ as) le = appendToFirst a (cuthead as (lemma-list le))
 
 -- (***) Previous definition does not guarantee correct split
 -- (e.g. you can make up any suffix). Define a better one.
