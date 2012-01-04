@@ -11,23 +11,20 @@ import Lambda hiding (main)
 
 def = emptyDef{ identStart      = letter
               , identLetter     = alphaNum
-              , opStart         = oneOf ".\\-="
-              , opLetter        = oneOf ".\\->="
+              , opStart         = oneOf ""
+              , opLetter        = oneOf ""
               , reservedOpNames = ["\\", ".", "->", "="]
               , reservedNames   = ["let", "in"]
               }
 
-TokenParser{ parens = m_parens
+TokenParser{ parens     = m_parens
            , identifier = m_identifier
            , reserved   = m_reserved
            , reservedOp = m_reservedOp
            , whiteSpace = m_whiteSpace } = makeTokenParser def
 
 onlyApply :: Parser Term
-onlyApply = chainl1 termparser (do
-    m_whiteSpace
-    return App
-    )
+onlyApply = chainl1 termparser (return App)
 
 onlyAbstract :: Parser Term
 onlyAbstract = do
