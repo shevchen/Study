@@ -25,12 +25,12 @@ instance Show Term where
 
 -- Конкатенация двух списков
 (++) :: [a] -> [a] -> [a]
-[] ++ b = b
+[]     ++ b = b
 (a:as) ++ b = a:(as ++ b)
 
 -- Свободные переменные терма
-free (Var v) = [v]
-free (Abs v t) = filter (/= v) . free $ t -- /= это <<не равно>>
+free (Var v)    = [v]
+free (Abs v t)  = filter (/= v) . free $ t -- /= это <<не равно>>
 free (App t t') = (free t) ++ (free t')
 
 -- Заменить все вхождения переменной var на what в терме term
@@ -44,40 +44,53 @@ elem a [] = False
 elem a (l:ls) = if a == l then True else elem a ls
 
 -- Любопытная функция
+iterate :: (a -> a) -> a -> [a]
 iterate f x = (:) x $ iterate f (f x)
 
 -- Генерирует список имён, производных от v, не входящих в fv
-newname fv v = head . filter (\x -> not . elem x $ fv) . iterate ('_':) $ v
+newname :: [String] -> String -> String
+newname fv v = head . filter (\x -> not $ elem x fv) . iterate ('_':) $ v
 
 -- Обычная бета-редукция, хендлящая переименования переменных
 betaReduct :: Variable -> Term -> Term -> Term
 betaReduct var what term = case term of 
     Var v    -> subst var what term
     App t t' -> App (betaReduct var what t) (betaReduct var what t')
-    Abs v t  -> if v == var then term else Abs nn (betaReduct var what (subst v (Var nn) t))
+    Abs v t  -> if v == var then term else Abs nn $ betaReduct var what (subst v (Var nn) t)
         where nn = newname ((free term) ++ (free what)) v
 
 betaRecuct = betaReduct
 
 -- Нормализация нормальным порядком терма term
+normal'step :: Term -> (Term, Bool)
+normal'step (Var v)             = (Var v, False)
+normal'step (Abs v t)           = let (rest, resb) = normal'step t in (Abs v rest, resb)
+normal'step (App (Abs v t1) t2) = (betaReduct v t2 t1, True)
+normal'step (App t1 t2)         = let (rest1, resb1) = normal'step t1 in
+    if resb1 then (App rest1 t2, True) else 
+        let (rest2, resb2) = normal'step t2 in (App rest1 rest2, resb2)
+
 normal' :: Term -> Term
-normal' term = case term of
-	Var v    -> term
-	Abs v t  -> Abs v (normal' t)
-	App t t' -> case (normal' t) of
-		Var v   -> App (Var v) (normal' t')
-		Abs v x -> normal' (betaReduct v t' x)
-		App x y -> App (App x y) (normal' t')
+normal' term = case (normal'step term) of
+    (t, False) -> t
+    (t, True)  -> normal' t
 
 -- Нормализация аппликативным порядком терма term
+applicative'step :: Term -> (Term, Bool)
+applicative'step (Var v)     = (Var v, False)
+applicative'step (Abs v t)   = let (rest, resb) = applicative'step t in (Abs v rest, resb)
+applicative'step (App t1 t2) = let (rest2, resb2) = applicative'step t2 in
+    if resb2 then (App t1 rest2, True) else
+        let (rest1, resb1) = applicative'step t1 in
+            if resb1 then (App rest1 rest2, True) else
+                case rest1 of
+                    Abs i j -> (betaReduct i rest2 j, True)
+                    _       -> (App rest1 rest2, False) 
+
 applicative' :: Term -> Term
-applicative' term = case term of
-	Var v            -> term
-	Abs v t          -> Abs v (applicative' t)
-	App t t'         -> case (applicative' t) of
-		Var v   -> App (Var v) (applicative' t')
-		Abs v x -> applicative' (betaReduct v (applicative' t') x)
-		App x y -> App (App x y) (applicative' t')
+applicative' term = case (applicative'step term) of
+    (t, False) -> t
+    (t, True)  -> applicative' t
 
 -- Маркер конца ресурсов
 data TooLoong = TooLoong deriving Show
@@ -87,40 +100,20 @@ data TooLoong = TooLoong deriving Show
 -- формы. Или (число нерастраченных итераций, терм в нормальной форме).
 -- 
 normal :: Int -> Term -> Either TooLoong (Int, Term)
-normal n term = if n < 0 then (Left TooLoong) else case term of
-	Var v    -> Right (n, term)
-	Abs v t  -> case (normal n t) of
-		Left TooLoong       -> Left TooLoong
-		Right (resn, rest)  -> Right (resn, Abs v rest)
-	App t t' -> case (normal n t) of
-		Left TooLoong      -> Left TooLoong
-		Right (resn, rest) -> case rest of
-			Var v   -> case (normal resn t') of
-				Left TooLoong         -> Left TooLoong
-				Right (resn', rest')  -> Right (resn', App (Var v) rest')
-			Abs v x -> normal (n - 1) (betaReduct v t' x)
-			App x y -> case (normal resn t') of
-				Left TooLoong         -> Left TooLoong
-				Right (resn', rest')  -> Right (resn', App (App x y) rest')			
+normal n term = if n < 0 then (Left TooLoong) else
+    case (normal'step term) of
+        (t, False) -> Right (n, t)
+        (t, True)  -> normal (n - 1) t
 
 -- (*) Аналогичная нормализация аппликативным порядком.
 applicative :: Int -> Term -> Either TooLoong (Int, Term)
-applicative n term = if n < 0 then (Left TooLoong) else case term of
-	Var v            -> Right (n, term)
-	Abs v t          -> case (applicative n t) of
-		Left TooLoong       -> Left TooLoong
-		Right (resn, rest)  -> Right (resn, Abs v rest)
-	App t t'         -> case (applicative n t) of
-		Left TooLoong -> Left TooLoong
-		Right (resn, rest)  -> case (applicative resn t') of
-			Left TooLoong  -> Left TooLoong
-			Right (resn', rest') -> case rest of
-				Var v   -> Right (resn', App rest rest')
-				Abs v x -> applicative (resn' - 1) (betaReduct v rest' x)
-				App x y -> Right (resn', App rest rest')
+applicative n term = if n < 0 then (Left TooLoong) else
+    case (applicative'step term) of
+        (t, False) -> Right (n, t)
+        (t, True)  -> applicative (n - 1) t
 
 -- (***) Придумайте и реализуйте обобщённую функцию, выражающую некоторое
--- семейство стратегий редуцирования. В том смысле, что номальная, нормальная
+-- семейство стратегий редуцирования. В том смысле, что нормальная, нормальная
 -- головная, нормальная слабо-головная и аппликативная стратегии
 -- при помощи этой функции будут выражаться некоторым элементарным образом.
 -- Аргумент n можно отбросить, а можно оставить.
