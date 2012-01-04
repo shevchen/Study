@@ -1,101 +1,122 @@
 #!/bin/bash
 
+checkFile() {
+  if [ ! -e "$1" ]
+  then
+    echo "$1: no such file."
+    return 1
+  elif [ -d "$1" ]
+  then
+    echo "$1 is a directory."
+    return 1
+  fi
+  return 0
+}
+
+checkRepo() {
+  if [ ! -d ".$1" ] || !(checkFile ".$1/version") || !(checkFile ".$1/backup")
+  then
+    echo "No repository found for $1."
+    return 1
+  fi
+  return 0
+}
+
 myvcs_init() {
-	if [ ! -f $1 ]
-	then
-		echo "$1: no such file."
-		return 1
-	fi
-	if [ -a ".$1" ]
-	then
-		rm -rf ".$1"
-	fi
-	mkdir ".$1"
-	v=".$1/version"
-	touch $v
-	echo "0" > $v
-	f=".$1/backup"
-	touch $f
-	echo "Initialized."
-	return 0
+  if !(checkFile "$1") 
+  then
+    return 1
+  fi
+  if [ -e ".$1" ]
+  then
+    rm -rf ".$1"
+  fi
+  mkdir ".$1"
+  v=".$1/version"
+  touch "$v"
+  echo "0" > $v
+  bkp=".$1/backup"
+  touch "$bkp"
+  echo "Initialized."
+  return 0
 }
 
 myvcs_commit() {
-	if [ ! -f $1 ]
-	then
-		echo "$1: no such file."
-		return 1
-	fi
-	read cv < ".$1/version"
-	p=".$1/p$cv"
-	touch "$p"
-	f=".$1/backup"
-	diff -u "$f" "$1" > "$p"
-	v=".$1/version"
-	echo $(($cv+1)) > $v
-	cat $1 > $f
-	echo "Committed."
-	return 0
+  if !(checkFile "$1") || !(checkRepo "$1")
+  then
+    return 1
+  fi
+  read cv < ".$1/version"
+  cdiff=".$1/diff$cv"
+  touch "$cdiff"
+  bkp=".$1/backup"
+  diff -u "$bkp" "$1" > "$cdiff"
+  v=".$1/version"
+  echo $(($cv+1)) > $v
+  cat "$1" > "$bkp"
+  echo "Committed."
+  return 0
 }
 
 myvcs_status() {
-	if [ ! -f $1 ]
-	then
-		echo "$1: no such file."
-		return 1
-	fi
-	f=".$1/backup"
-	b=`cmp "$1" ".$1/backup"`
-	if [ ${#b} -eq 0 ]
-	then
-		echo "Latest version."
-		return 0
-	else
-		echo "Old version."
-		return 1
-	fi
-	return 0
+  if !(checkFile "$1") || !(checkRepo "$1")
+  then
+    return 1
+  fi
+  diff -u ".$1/backup" "$1" >> /dev/null
+  if (($? == 0))
+  then
+    echo "Latest version."
+    return 0
+  else
+    echo "Old version."
+    return 1 
+  fi
 }
 
 myvcs_diff() {
-	if [ ! -f $1 ]
-	then
-		echo "$1: no such file."
-		return 1
-	fi
-	f=".$1/backup"
-	diff -u "$1" "$f"
-	return 0
+  if !(checkFile "$1") || !(checkRepo "$1")
+  then
+    return 1
+  fi
+  bkp=".$1/backup"
+  diff -u "$bkp" "$1"
+  return $?
 }
 
 myvcs_update() {
-	if [ ! -f $1 ]
-	then
-		echo "$1: no such file."
-		return 1
-	fi
-	f=".$1/backup"
-	rm "$1"
-	touch "$1"
-	for ((i=0;i<$2+1;i+=1));
-	do
-		patch "$1" ".$1/p$i"
-	done
-	echo "Updated."
-	return 0
+  if !(checkFile "$1") || !(checkRepo "$1")
+  then
+    return 1
+  fi
+  v=".$1/version"
+  read cv < "$v"
+  if (($2 >= $cv || $2 < 0))
+  then
+    echo "Invalid version."
+    return 1
+  fi
+  rm "$1"
+  touch "$1"
+  for ((i=0;i<$2+1;i+=1))
+  do
+    patch "$1" ".$1/diff$i" > /dev/null
+  done
+  echo "Updated."
+  return 0
 }			
 
 case "$1" in
-	"init" )
-		myvcs_init $2;;
-	"commit" )
-		myvcs_commit $2;;	
-	"status" )
-		myvcs_status $2;;
-	"diff" )
-		myvcs_diff $2;;
-	"update" )
-		myvcs_update $2 $3;;
-	* )
-		echo "$1: no such command."
+  "init" )
+    myvcs_init $2;;
+  "commit" )
+    myvcs_commit $2;;	
+  "status" )
+    myvcs_status $2;;
+  "diff" )
+    myvcs_diff $2;;
+  "update" )
+    myvcs_update $2 $3;;
+  * )
+    echo "$1: no such command."
 esac
