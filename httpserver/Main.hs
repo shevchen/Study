@@ -43,11 +43,9 @@ respondToMsg socketHandle address = do
     hPutStrLn socketHandle "HTTP/1.1 200 OK"
     hPutStrLn socketHandle ""
     putStrLn $ "Sending " ++ address
-    openFile address ReadMode >>= writeToFile socketHandle
+    openBinaryFile address ReadMode >>= writeToFile socketHandle
 
 writeToFile :: Handle -> Handle -> IO ()
 writeToFile socketHandle file = do
-  isEnd <- hIsEOF file
-  if isEnd then hClose file else do
-    hGetLine file >>= hPutStrLn socketHandle
-    writeToFile socketHandle file
+  hGetContents file >>= hPutStrLn socketHandle
+  hClose file
