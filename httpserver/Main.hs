@@ -17,6 +17,7 @@ main = do
 receiveMessages :: Socket -> IO ()
 receiveMessages mySocket = do
   (socketHandle, _, _) <- accept mySocket
+  putStrLn "Someone has connected."
   forkIO $ respond socketHandle 
   receiveMessages mySocket
 
@@ -26,13 +27,14 @@ respond socketHandle = do
   if isClosed then return () else do
     firstLine <- hGetLine socketHandle
     case (getData $ words firstLine) of
-      Just ("GET", address, "HTTP/1.1") -> respondToMsg socketHandle address
-      _                                 -> return ()
+      Just ("GET", address, _) -> respondToMsg socketHandle address
+      _                        -> return ()
     respond socketHandle
 
 getData :: [String] -> Maybe (String, String, String)
-getData (x:(y:(z:[]))) = Just (x, y, z)
-getData _              = Nothing
+getData ws = if length ws < 3 then Nothing else
+  let fileName = foldl (\ s t -> s ++ (' ' : t)) (ws !! 1) (init $ drop 2 ws) in 
+    Just (ws !! 0, fileName, last ws)
 
 respondToMsg :: Handle -> String -> IO ()
 respondToMsg socketHandle address = do
@@ -40,6 +42,7 @@ respondToMsg socketHandle address = do
   if not exists then hPutStrLn socketHandle "HTTP/1.1 404 Not Found" else do
     hPutStrLn socketHandle "HTTP/1.1 200 OK"
     hPutStrLn socketHandle ""
+    putStrLn $ "Sending " ++ address
     openFile address ReadMode >>= writeToFile socketHandle
 
 writeToFile :: Handle -> Handle -> IO ()
