@@ -7,17 +7,15 @@ fetch4me_escape() {
 
 fetch4me_update_queue() {
   temp="$QQEDIR/..queue"
-  rm -f "$temp"
-  touch "$temp"
   file="$QQEDIR/.queue"
   case "$1" in
     "-a" )
-      cat "$file" >> "$temp"
+      cat "$file" > "$temp"
       echo "$2" >> "$temp"
       echo "$3" >> "$temp"
       ;;
     "-r" )
-      cat "$file" | tail -n +3 >> "$temp"
+      cat "$file" | tail -n +3 > "$temp"
       ;;
     * )
       echo "$1: no such flag." >&2
@@ -30,20 +28,18 @@ fetch4me_update_queue() {
 
 fetch4me_update_status() {
   temp="$QQEDIR/..status"
-  rm -f "$temp"
-  touch "$temp"
   file="$QQEDIR/.status"
   queue="$QQEDIR/.queue"
   case "$1" in
     "-a" )
-      echo "Current file:" >> "$temp"
+      echo "Current file:" > "$temp"
       echo "$3" >> "$temp"
       echo "Referer:" >> "$temp"
-      echo "$" >> "$temp"
+      echo "$2" >> "$temp"
       echo >> "$temp"
       ;;
     "-u" )
-      echo "No file being processed." >> "$temp"
+      echo "No file being processed." > "$temp"
       echo >> "$temp"
       ;;
     * )
@@ -80,7 +76,7 @@ fetch4me_observe() {
   fi
   while true
   do
-    list=(`ls "$QQEDIR" | grep ^query`) || true
+    list=(`ls "$QQEDIR" | grep ^query`)
     if [ ${#list[@]} -gt 0 ]
     then
       for file in "$list"
@@ -153,8 +149,7 @@ fetch4me_create_query() {
     let rand%=10
     file="$file$rand"
   done
-  touch "$file"
-  echo "$1" >> "$file"
+  echo "$1" > "$file"
   echo "$2" >> "$file"
   return 0
 }
@@ -165,37 +160,25 @@ GETELEMFUNC=wget
 fetch4me_load_vars
 referer="no_referer"
 urls=0
-while (($#))
+while getopts w:r: var
 do
-  case "$1" in
-    "-w" )
-      shift
-      if [ $# -eq 0 ]
-      then
-        echo "Invalid arguments." >&2
-        return 1
-      fi
-      QQEDIR="$1"
-      shift
+  case "$var" in
+    "w" )
+      QQEDIR="$OPTARG"
       ;;
-    "-r" )
-      shift
-      if [ $# -eq 0 ]
-      then
-        echo "Invalid arguments." >&2
-        return 1
-      fi
-      referer="$1"
-      shift
-      ;;
-    * )
-      url[$urls]="$1"
-      shift
-      let urls+=1
+    "r" )
+      referer="$OPTARG"
       ;;
   esac
 done
-if [ $urls -eq 0 ]
+shift $((OPTIND-1))
+while (($#>0))
+do
+  url[$urls]="$1"
+  let urls+=1
+  shift
+done
+if (($urls==0))
 then
   echo "No urls given." >&2
   exit 1
@@ -205,4 +188,5 @@ for u in "$url"
 do
   fetch4me_create_query "$referer" "$u"
 done
+# some check if the daemon is already working
 fetch4me_daemonize
