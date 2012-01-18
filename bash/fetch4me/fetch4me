@@ -65,9 +65,9 @@ fetch4me_observe() {
   fetched=0
   touch "$QQEDIR"/.queue "$QQEDIR"/.status "$QQEDIR"/.finished
   list=(`cat "$QQEDIR/.queue"`)
-  if [ ${#list[@]} -gt 0 ]
+  if ((${#list[@]} > 0))
   then
-    for (( i=0; i<${#list[@]}; i+=2 ))
+    for ((i = 0; i < ${#list[@]}; i += 2 ))
     do
       ref[$queuesize]=${list[$i]}
       url[$queuesize]=${list[$(($i+1))]}
@@ -76,8 +76,13 @@ fetch4me_observe() {
   fi
   while true
   do
-    list=(`ls "$QQEDIR" | grep ^query`)
-    if [ ${#list[@]} -gt 0 ]
+    read pid < "$QQEDIR/.pid"
+    if ((pid != $$))
+    then
+      exit 0
+    fi
+    list=(`ls "$QQEDIR" | grep ^query`) || true
+    if ((${#list[@]} > 0))
     then
       for file in "$list"
       do
@@ -91,7 +96,7 @@ fetch4me_observe() {
         rm "$f"
       done
     fi
-    if [ $fetched -lt $queuesize ]
+    if (($fetched < $queuesize))
     then
       fetch4me_escape ${ref[$fetched]}
       esc_ref=$ESCAPED
@@ -99,11 +104,11 @@ fetch4me_observe() {
       esc_url=$ESCAPED
       save_dir=~/Downloads/fetched4you/"$esc_ref";
       mkdir -p "$save_dir"
-      full_path="$save_dir/$esc_url"
+      full_path="$save_dir/$esc_url.fetched"
       echo "Downloading ${url[$fetched]}..."
       fetch4me_update_status -a "${ref[$fetched]}" "${url[$fetched]}"
       $GETELEMFUNC -cq -O "$full_path" "${url[$fetched]}"
-      if [ $? -ne 0 ]
+      if (($? != 0))
       then
         echo "Error while processing ${url[$fetched]}." >&2
       else
@@ -146,7 +151,7 @@ fetch4me_create_query() {
   while [ -e "$file" ]
   do
     rand=$RANDOM
-    let rand%=10
+    let rand %= 10
     file="$file$rand"
   done
   echo "$1" > "$file"
@@ -171,14 +176,14 @@ do
       ;;
   esac
 done
-shift $((OPTIND-1))
-while (($#>0))
+shift $((OPTIND - 1))
+while (($# > 0))
 do
   url[$urls]="$1"
   let urls+=1
   shift
 done
-if (($urls==0))
+if (($urls == 0))
 then
   echo "No urls given." >&2
   exit 1
@@ -188,5 +193,9 @@ for u in "$url"
 do
   fetch4me_create_query "$referer" "$u"
 done
-# some check if the daemon is already working
+PIDFILE="$QQEDIR/.pid"
+touch "$PIDFILE"
+read pid < "$PIDFILE" || true
+ps -p "$pid" 1> /dev/null 2>&1 && exit 0 || true
+echo $$ > "$PIDFILE"
 fetch4me_daemonize
