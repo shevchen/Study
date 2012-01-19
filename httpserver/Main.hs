@@ -23,13 +23,11 @@ receiveMessages mySocket = do
 
 respond :: Handle -> IO ()
 respond socketHandle = do
-  isClosed <- hIsEOF socketHandle
-  if isClosed then return () else do
-    firstLine <- hGetLine socketHandle
-    case (getData $ words firstLine) of
-      Just ("GET", address, _) -> respondToMsg socketHandle address
-      _                        -> return ()
-    respond socketHandle
+  firstLine <- hGetLine socketHandle
+  putStrLn firstLine
+  case (getData $ words firstLine) of
+    Just ("GET", address, _) -> respondToMsg socketHandle address
+    _                        -> return ()
 
 getData :: [String] -> Maybe (String, String, String)
 getData ws = if length ws < 3 then Nothing else
@@ -37,13 +35,15 @@ getData ws = if length ws < 3 then Nothing else
     Just (ws !! 0, fileName, last ws)
 
 respondToMsg :: Handle -> String -> IO ()
-respondToMsg socketHandle address = do
+respondToMsg socketHandle address' = do
+  let address = tail address'
   exists <- doesFileExist address
-  if not exists then hPutStrLn socketHandle "HTTP/1.1 404 Not Found" else do
-    hPutStrLn socketHandle "HTTP/1.1 200 OK"
-    hPutStrLn socketHandle ""
+  if not exists then hPutStrLn socketHandle "HTTP/1.1 404 Not Found\r" else do
+    hPutStrLn socketHandle "HTTP/1.1 200 OK\r"
+    hPutStrLn socketHandle "\r"
     putStrLn $ "Sending " ++ address
     openBinaryFile address ReadMode >>= writeToFile socketHandle
+    hClose socketHandle
 
 writeToFile :: Handle -> Handle -> IO ()
 writeToFile socketHandle file = do
