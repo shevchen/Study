@@ -258,7 +258,9 @@ appendToFirst a (vector , b) = (a :: vector , b)
 -- I'll give you a tuple (prefix of length n, suffix)
 cuthead : ∀ {A} {n : ℕ} → (l : List A) → n ≤ length l → Vec A n × List A
 cuthead {_} {zero} list _        = ([0] , list)
-cuthead {_} {succ n} (a ∷ as) le = appendToFirst a (cuthead as (lemma-list le))
+cuthead {A} {succ n} (a ∷ as) le = appendToFirst a (cuthead as (lemma-list {A} {n} {a} {as} le))
+cuthead {_} {succ _} [] (left ())
+cuthead {_} {succ _} [] (right ())
 
 -- (***) Previous definition does not guarantee correct split
 -- (e.g. you can make up any suffix). Define a better one.
