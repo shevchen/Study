@@ -77,7 +77,7 @@ fetch4me_observe() {
   while true
   do
     read pid < "$QQEDIR/.pid"
-    if ((pid != $$))
+    if (($pid != $$))
     then
       exit 0
     fi
