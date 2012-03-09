@@ -1,4 +1,5 @@
 #include <string.h>
+#include <stdio.h> // debug
 
 #define buf_size 10
 
@@ -84,6 +85,7 @@ int main()
   do
   {
     count = read_chars(buf);
+    printf("%d\n", count);
     if (count == -1)
     {
       return -1;
