@@ -2,7 +2,7 @@
 
 #define buf_size 10
 
-typedef struct buffer
+typedef struct
 {
   char in[buf_size], out[buf_size];
   int in_size, out_size, skip_next;
