@@ -21,11 +21,16 @@ int read_chars(buf_t* buf)
 int reverse(char* out, int len)
 {
   int i;
-  for (i = 0; i < (len - 1) / 2; ++i)
+  int act_len = len;
+  while (act_len > 0 && (out[act_len - 1] == '\n' || out[act_len - 1] == '\r'))
+  {
+    act_len--;
+  }
+  for (i = 0; i < act_len / 2; ++i)
   {
     char c = out[i];
-    out[i] = out[len - 2 - i];
-    out[len - 2 - i] = c;
+    out[i] = out[act_len - 1 - i];
+    out[act_len - 1 - i] = c;
   }
   return write(1, out, len);
 }
@@ -95,7 +100,7 @@ int main()
   } while (count == buf_size);
   if (buf.out_size > 0)
   {
-    if (write_chars(&buf) == -1)
+    if (reverse(buf.out, buf.out_size) == -1)
     {
       return -1;
     }
