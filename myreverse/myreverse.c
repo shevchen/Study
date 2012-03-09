@@ -1,5 +1,4 @@
 #include <string.h>
-#include <stdio.h> // debug
 
 #define buf_size 10
 
@@ -77,28 +76,26 @@ int write_chars(buf_t* buf)
 
 int main()
 {
-  buf_t* buf;
-  buf->in_size = 0;
-  buf->out_size = 0;
-  buf->skip_next = 0;
+  buf_t buf;
+  buf.in_size = 0;
+  buf.out_size = 0;
+  buf.skip_next = 0;
   int count;
   do
   {
-    count = read_chars(buf);
-    printf("%d\n", count);
+    count = read_chars(&buf);
     if (count == -1)
     {
       return -1;
     }
-    if (write_chars(buf) == -1)
+    if (write_chars(&buf) == -1)
     {
       return -1;
     }
   } while (count == buf_size);
-  if (buf->out_size > 0)
+  if (buf.out_size > 0)
   {
-    buf->out[buf->out_size++] = '\n';
-    if (write_chars(buf) == -1)
+    if (write_chars(&buf) == -1)
     {
       return -1;
     }

@@ -1,5 +1,2 @@
-all: compile debug
-compile:
+all:
 	gcc myreverse.c -o myreverse
-debug:
-	cat input | ./myreverse > output
