@@ -23,12 +23,12 @@ int read_chars(buf_t* buf)
   return buf->in_size - was;
 }
 
-int write_chars(char* buf, int len)
+int write_chars(char* out, int len)
 {
   int pos = 0;
   while (pos < len)
   {
-    int count = write(1, buf + pos, len - pos);
+    int count = write(1, out + pos, len - pos);
     if (count == -1)
     {
       return -1;
@@ -120,8 +120,7 @@ int main()
     }
     if (count == 0)
     {
-      break;
+      return 0;
     }
   }
-  return 0;
 }
