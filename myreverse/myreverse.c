@@ -10,17 +10,12 @@ typedef struct
 
 int read_chars(buf_t* buf)
 {
-  int was = buf->in_size;
-  while (buf->in_size < buf_size)
+  int count = read(0, buf->in + buf->in_size, buf_size - buf->in_size);
+  if (count > 0)
   {
-    int count = read(0, buf->in + buf->in_size, buf_size - buf->in_size);
-    if (count <= 0)
-    {
-      return count;
-    }
     buf->in_size += count;
   }
-  return buf->in_size - was;
+  return count;
 }
 
 int write_chars(char* out, int len)
