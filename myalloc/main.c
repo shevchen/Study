@@ -2,7 +2,8 @@ void* malloc(size_t size) {
   if (size == 0) {
     return NULL;
   }
-  if (size <= max_small_size) {
+  size += 2 * sizeof(size_t); // pid + size + memory
+  if (size <= MAX_SMALL) {
     return add_small(size);
   } else {
     return add_large(size);
@@ -30,7 +31,7 @@ void* realloc(void* old, size_t size) {
 void free(void* ptr) {
   if (ptr != NULL) {
     size_t size = get_size(ptr);
-    if (size <= max_small_size) {
+    if (size <= MAX_SMALL) {
       free_small(ptr);
     } else {
       free_large(ptr);
