@@ -7,7 +7,7 @@ typedef struct {
 
 #define A 239
 #define B 366
-#define MOD 2048
+#define MOD 32768
 
 bucket_list* map[MOD];
 
@@ -29,15 +29,22 @@ void* get_bucket(pid_t pid, int small) {
   return small ? new_list->small : new_list->large;
 }
 
-void add_bucket(pid_t pid, void* new_bucket, int small) {
+small_bucket* get_small_bucket(pid_t pid) {
+  return (small_bucket*)get_bucket(pid, 1);
+}
+
+large_bucket* get_large_bucket(pid_t pid) {
+  return (large_bucket*)get_bucket(pid, 0);
+}
+
+void add_small_bucket(pid_t pid, small_bucket* new_bucket) {
   bucket_list* list = map[get_hash(pid)];
-  if (small) {
-    small_bucket* buck = (small_bucket*)new_bucket;
-    buck->next = list->small;
-    list->small = buck;
-  } else {
-    large_bucket* buck = (large_bucket*)new_bucket;
-    buck->next = list->large;
-    list->large = buck;
-  }
+  new_bucket->next = list->small;
+  list->small = new_bucket;
+}
+
+void add_large_bucket(pid_t pid, large_bucket* new_bucket) {
+  bucket_list* list = map[get_hash(pid)];
+  new_bucket->next = list->large;
+  list->large = new_bucket;
 }
