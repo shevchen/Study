@@ -9,13 +9,13 @@ typedef struct {
 #define B 366
 #define MOD 32768
 
-bucket_list* map[MOD];
+static bucket_list* map[MOD];
 
-size_t get_hash(pid_t pid) {
+static size_t get_hash(pid_t pid) {
   return (A * (size_t)pid + B) % MOD;
 }
 
-void* get_bucket(pid_t pid, int small) {
+static void* get_bucket(pid_t pid, int small) {
   size_t hash = get_hash(pid);
   bucket_list* list = map[hash];
   while (list != NULL) {
@@ -47,4 +47,11 @@ void add_large_bucket(pid_t pid, large_bucket* new_bucket) {
   bucket_list* list = map[get_hash(pid)];
   new_bucket->next = list->large;
   list->large = new_bucket;
+}
+
+void remove_large_bucket(pid_t pid) {
+  bucket_list* list = map[get_hash(pid)];
+  if (list->large != NULL) {
+    list->large = list->large->next;
+  }
 }

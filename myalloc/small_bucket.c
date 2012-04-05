@@ -1,7 +1,7 @@
 #define BITS 32
 #define MAX_SMALL 4096
 
-const int memory_per_bit = MAX_SMALL / BITS;
+static const int memory_per_bit = MAX_SMALL / BITS;
 
 typedef struct {
   size_t mask;
@@ -20,8 +20,8 @@ void* add_small(size_t size) {
       if (!(mask & ((1 << need_bits) - 1))) {
         mask |= (1 << (i + need_bits)) - (1 << i);
         buck->memory[i] = (size_t)pid;
-        buck->memory[i + sz] = (size - 2 * sz);
-        return buck->memory + i * sizeof(void) + 2 * sz;
+        buck->memory[i + sz] = need_bits;
+        return buck->memory + i * memory_per_bit + 2 * sz;
       }
     }
     buck = buck->next;
@@ -37,11 +37,11 @@ void free_small(void* ptr) {
   size_t sz = sizeof(size_t);
   pid_t pid = (pid_t)(size_t)*(ptr - 2 * sz);
   small_bucket* buck = get_small_bucket(pid, 1);
-  size_t size = (size_t)*(ptr - sz);
+  size_t busy_bits = (size_t)*(ptr - sz);
   while (buck != NULL) {
-    if (ptr >= buck->memory && ptr + size <= buck->memory + MAX_SMALL) {
-      size_t lo = (size_t)(ptr - buck_memory) / BITS;
-      size_t hi = (size_t)(ptr - buck_memory + size) / BITS;
+    if (ptr >= buck->memory && ptr < buck->memory + MAX_SMALL) {
+      size_t lo = (size_t)(ptr - buck_memory) / memory_per_bit;
+      size_t hi = lo + busy_bits;
       buck->mask &= ~((1 << hi) - (1 << lo));
       return;
     }
