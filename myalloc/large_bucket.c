@@ -8,7 +8,7 @@ static large_bucket* global_buckets = NULL;
 void* get_from_global(size_t pages, pid_t pid) {
   void* ptr = try_alloc(&global_buckets, pages, pid);
   if (ptr == NULL) {
-    ptr = mmap(NULL, pages * getpagesize(), PROT_READ | PROT_WRITE, MAP_ANONYMOUS, -1, 0);
+    ptr = mmap(NULL, pages * getpagesize(), PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
   }
   return ptr;
 }
