@@ -28,13 +28,13 @@ large_bucket* get_large_buckets(pid_t pid) {
   return list->large;
 }
 
-void add_small_bucket(pid_t pid, small_bucket* new_bucket) {
+void release_small_bucket(pid_t pid, small_bucket* new_bucket) {
   bucket_list* list = get_all_buckets(pid);
   new_bucket->next = list->small;
   list->small = new_bucket;
 }
 
-void add_large_bucket(pid_t pid, large_bucket* new_bucket) {
+void release_large_bucket(pid_t pid, large_bucket* new_bucket) {
   bucket_list* list = get_all_buckets(pid);
   new_bucket->next = list->large;
   list->large = new_bucket;

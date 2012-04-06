@@ -33,5 +33,5 @@ void free_large(void* ptr) {
   large_bucket* new_bucket = (large_bucket*)get_memory(sizeof(large_bucket));
   new_bucket->memory = ptr - sz;
   new_bucket->pages = pages;
-  add_large_bucket(getpid(), new_bucket);
+  release_large_bucket(getpid(), new_bucket);
 }
