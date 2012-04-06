@@ -1,2 +1,2 @@
 all:
-	gcc myreverse.c -o myreverse
+	gcc -ggdb myreverse.c -o myreverse
