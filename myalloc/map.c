@@ -40,3 +40,7 @@ void add_large_bucket(pid_t pid, large_bucket* new_bucket) {
   new_bucket->next = list->large;
   list->large = new_bucket;
 }
+
+size_t get_size(void* ptr) {
+  return *((size_t*)ptr - sizeof(size_t));
+}

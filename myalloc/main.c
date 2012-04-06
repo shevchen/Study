@@ -15,6 +15,12 @@ void* calloc(size_t elems, size_t bytes_each) {
   return memset(ptr, (int)0, bytes);
 }
 
+void free(void* ptr) {
+  if (ptr != NULL) {
+    free_large(ptr);
+  }
+}
+
 void* realloc(void* old, size_t size) {
   void* ptr = malloc(size);
   if (old != NULL) {
@@ -25,10 +31,4 @@ void* realloc(void* old, size_t size) {
     free(old);
   }
   return ptr;
-}
-
-void free(void* ptr) {
-  if (ptr != NULL) {
-    free_large(ptr);
-  }
 }
