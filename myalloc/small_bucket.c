@@ -1,27 +1,27 @@
 #include "small_bucket.h"
 
-void* add_small(size_t size) {
+void* add_small() {
   pid_t pid = getpid();
-  size_t need_bits = (size + memory_per_bit - 1) / memory_per_bit;
-  size_t sz = sizeof(size_t);
   small_bucket* buck = get_small_bucket(pid);
   while (buck != NULL) {
     size_t mask = buck->mask;
-    for (size_t i = 0; i <= BITS - need_bits; ++i) {
-      if (!(mask & ((1 << need_bits) - 1))) {
-        mask |= (1 << (i + need_bits)) - (1 << i);
-        buck->memory[i] = (size_t)pid;
-        buck->memory[i + sz] = need_bits;
-        return buck->memory + i * memory_per_bit + 2 * sz;
+    if (mask != (size_t)(-1)) {
+      size_t free = 0;
+      while (mask & (1 << free)) {
+        ++free;
       }
+      mask |= 1 << free;
+      return buck->memory + memory_per_bit * free;
     }
     buck = buck->next;
   }
-  small_bucket new_bucket = {(1 << need_bits) - 1, mmap(NULL, MAX_SMALL, PROT_READ | PROT_WRITE, MAP_ANONYMOUS, -1, 0), NULL};
-  new_bucket.memory[0] = (size_t)pid;
-  new_bucket.memory[sz] = size - 2 * sz;
+  small_bucket new_bucket = {
+    .mask = 1,
+    .memory = mmap(NULL, MAX_SMALL, PROT_READ | PROT_WRITE, MAP_ANONYMOUS, -1, 0),
+    .next = NULL
+  };
   add_small_bucket(pid, &new_bucket);
-  return new_bucket.memory + 2 * sz;
+  return new_bucket.memory;
 }
 
 void free_small(void* ptr) {
