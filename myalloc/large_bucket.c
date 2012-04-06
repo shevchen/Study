@@ -1,43 +1,34 @@
-#define MIN_LEAVE 4096
+#include <sys/types.h>
+#include <sys/mman.h>
+#include <unistd.h>
+#include "map.c"
 
-typedef struct {
-  void* memory;
-  size_t size;
-  large_bucket* next;
-} large_bucket;
+static large_bucket* global_buckets = NULL;
+
+void* get_from_global(size_t pages, pid_t pid) {
+  void* ptr = try_alloc(&global_buckets, pages, pid);
+  if (ptr == NULL) {
+    ptr = mmap(NULL, pages * getpagesize(), PROT_READ | PROT_WRITE, MAP_ANONYMOUS, -1, 0);
+  }
+  return ptr;
+}
 
 void* add_large(size_t size) {
+  int PAGE_SIZE = getpagesize();
+  size_t pages = (size + 2 * sizeof(size_t) + PAGE_SIZE - 1) / PAGE_SIZE;
   pid_t pid = getpid();
-  size_t sz = sizeof(size_t);
-  large_bucket* buck = get_large_bucket(pid);
-  large_bucket* last = NULL;
-  while (buck != NULL) {
-    if (buck->size >= size) {
-      buck->memory[0] = (size_t)pid;
-      buck->memory[sz] = size;
-      size_t memory_left = buck->size - size;
-      if (memory_left >= MIN_LEAVE) {
-        buck->memory += size;
-        buck->size -= size;
-        return buck->memory - size + 2 * sz;
-      }
-      munmap(buck->memory + size, memory_left);
-      if (last != NULL) {
-        last->next = buck->next;
-      } else {
-        remove_large_bucket(pid);
-      }
-      return buck_memory + 2 * sz;
-    }
-    last = buck;
-    buck = buck->next;
-  }
-  return get_from_global(size);
+  large_bucket* buckets = get_large_buckets(pid);
+  void* ptr = try_alloc(&buckets, pages, pid);
+  return ptr != NULL ? ptr : get_from_global(pages, pid);
 }
 
 void free_large(void* ptr) {
   size_t sz = sizeof(size_t);
-  size_t size = *(ptr - sz);
-  large_bucket new_bucket = {ptr - 2 * sz, size, NULL};
+  size_t pages = *((size_t*)ptr - sz);
+  large_bucket new_bucket = {
+    .memory = ptr - 2 * sz,
+    .pages = pages,
+    .next = NULL
+  };
   add_large_bucket(getpid(), &new_bucket);
 }

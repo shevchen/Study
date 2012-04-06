@@ -1,13 +1,4 @@
-#define BITS 32
-#define MAX_SMALL 4096
-
-static const int memory_per_bit = MAX_SMALL / BITS;
-
-typedef struct {
-  size_t mask;
-  void* memory;
-  small_bucket* next;
-} small_bucket;
+#include "small_bucket.h"
 
 void* add_small(size_t size) {
   pid_t pid = getpid();

@@ -1,19 +1,18 @@
+#include <string.h>
+//#include "small_bucket.c"
+#include "large_bucket.c"
+
 void* malloc(size_t size) {
   if (size == 0) {
     return NULL;
   }
-  size += 2 * sizeof(size_t); // pid + size + memory
-  if (size <= MAX_SMALL) {
-    return add_small(size);
-  } else {
-    return add_large(size);
-  }
+  return add_large(size);
 }
 
 void* calloc(size_t elems, size_t bytes_each) {
   size_t bytes = elems * bytes_each;
   void* ptr = malloc(bytes);
-  return memset(ptr, 0, bytes);
+  return memset(ptr, (int)0, bytes);
 }
 
 void* realloc(void* old, size_t size) {
@@ -30,11 +29,6 @@ void* realloc(void* old, size_t size) {
 
 void free(void* ptr) {
   if (ptr != NULL) {
-    size_t size = get_size(ptr);
-    if (size <= MAX_SMALL) {
-      free_small(ptr);
-    } else {
-      free_large(ptr);
-    }
+    free_large(ptr);
   }
 }
