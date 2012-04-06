@@ -13,7 +13,7 @@ void main() {
     sum += mem[i];
   }
   printf("%d = 840\n", sum);
-  //free(mem);
+  free(mem);
   printf("freed mem\n");
   mem = (int*)malloc(305);
   printf("allocated mem\n");

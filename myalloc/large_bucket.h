@@ -18,7 +18,7 @@ void* try_alloc(large_bucket** buckets, size_t pages, pid_t pid) {
       } else {
         *buckets = (*buckets)->next;
       }
-      return mem + 2 * sz;
+      return mem;
     }
     last = buck;
     buck = buck->next;
