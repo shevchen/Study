@@ -2,6 +2,7 @@
 #include <sys/mman.h>
 #include <unistd.h>
 #include "map.c"
+#include <stdio.h>
 
 static large_bucket* global_buckets = NULL;
 
@@ -23,6 +24,7 @@ void* add_large(size_t size) {
   if (ptr == NULL) {
     ptr = get_from_global(pages);
   }
+  printf("Large bucket allocated at %x\n", (size_t)ptr);
   *(size_t*)ptr = pages;
   return ptr + sz;
 }
@@ -31,6 +33,7 @@ void free_large(void* ptr) {
   size_t sz = sizeof(size_t);
   size_t pages = *(size_t*)(ptr - sz);
   large_bucket* new_bucket = (large_bucket*)get_memory(sizeof(large_bucket));
+  printf("Large bucket freed at %x\n", (size_t)(ptr - sz));
   new_bucket->memory = ptr - sz;
   new_bucket->pages = pages;
   release_large_bucket(getpid(), new_bucket);
