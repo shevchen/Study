@@ -21,8 +21,8 @@ void main() {
   printf("allocated mem2\n");
   mem2[123456] = 654321;
   printf("%d = 654321\n", mem2[123456]);
-  //free(mem2);
+  free(mem2);
   printf("freed mem2\n");
-  //free(mem);
+  free(mem);
   printf("freed mem\n");
 }

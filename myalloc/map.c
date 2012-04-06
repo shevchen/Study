@@ -11,31 +11,25 @@ static bucket_list* get_all_buckets(pid_t pid) {
     }
     list = list->next;
   }
-  bucket_list new_list = {
-    .pid = pid,
-    .small = NULL,
-    .large = NULL,
-    .next = map[hash]
-  };
-  map[hash] = &new_list;
-  return map[hash];
-}
-
-static void* get_buckets(pid_t pid, int small) {
-  bucket_list* list = get_all_buckets(pid);
-  return small ? (void*)(list->small) : (void*)(list->large);
+  bucket_list* new_list = (bucket_list*)get_memory(sizeof(bucket_list));
+  new_list->pid = pid;
+  new_list->next = map[hash];
+  map[hash] = new_list;
+  return new_list;
 }
 
 small_bucket* get_small_buckets(pid_t pid) {
-  return (small_bucket*)get_buckets(pid, 1);
+  bucket_list* list = get_all_buckets(pid);
+  return list->small;
 }
 
 large_bucket* get_large_buckets(pid_t pid) {
-  return (large_bucket*)get_buckets(pid, 0);
+  bucket_list* list = get_all_buckets(pid);
+  return list->large;
 }
 
 void add_small_bucket(pid_t pid, small_bucket* new_bucket) {
-  bucket_list* list = map[get_hash(pid)];
+  bucket_list* list = get_all_buckets(pid);
   new_bucket->next = list->small;
   list->small = new_bucket;
 }
