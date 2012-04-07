@@ -15,7 +15,7 @@ void main() {
   printf("%d = 840\n", sum);
   free(mem);
   printf("freed mem\n");
-  mem = (int*)malloc(305);
+  mem = (int*)malloc(30);
   printf("allocated mem\n");
   size_t* mem2 = (size_t*)malloc(1000000);
   printf("allocated mem2\n");

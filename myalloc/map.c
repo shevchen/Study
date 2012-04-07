@@ -66,7 +66,7 @@ size_t get_size(void* ptr) {
   if (small == NULL) {
     return *(size_t*)(ptr - sizeof(size_t));
   }
-  return getpagesize();
+  return getpagesize() / (sizeof(size_t) * 8);
 }
 
 #endif

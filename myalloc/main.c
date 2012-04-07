@@ -6,7 +6,7 @@ void* malloc(size_t size) {
   if (size == 0) {
     return NULL;
   }
-  if (size > getpagesize() / sizeof(size_t)) {
+  if (size > getpagesize() / (sizeof(size_t) * 8)) {
     return add_large(size);
   }
   return add_small();
