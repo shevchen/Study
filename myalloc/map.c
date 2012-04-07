@@ -1,4 +1,30 @@
+#ifndef _MAP_C_
+#define _MAP_C_
+
 #include "map.h"
+
+static small_allocs* alloc_map[MOD];
+
+small_bucket* find_small(void* ptr) {
+  size_t page_addr = (size_t)ptr / (getpagesize() * SMALL_BUCKET_PAGES);
+  small_allocs* allocs = alloc_map[get_hash(page_addr)];
+  while (allocs != NULL) {
+    if (allocs->page_addr == page_addr) {
+      return allocs->bucket;
+    }
+    allocs = allocs->next;
+  }
+  return NULL;
+}
+
+void add_small_bucket_mem(small_bucket* bucket, size_t page_addr) {
+  size_t hash = get_hash(page_addr);
+  small_allocs* new_alloc = (small_allocs*)get_memory(sizeof(small_allocs));
+  new_alloc->bucket = bucket;
+  new_alloc->page_addr = page_addr;
+  new_alloc->next = alloc_map[hash];
+  alloc_map[hash] = new_alloc;
+}
 
 static bucket_list* map[MOD];
 
@@ -28,12 +54,6 @@ large_bucket* get_large_buckets(pid_t pid) {
   return list->large;
 }
 
-void release_small_bucket(pid_t pid, small_bucket* new_bucket) {
-  bucket_list* list = get_all_buckets(pid);
-  new_bucket->next = list->small;
-  list->small = new_bucket;
-}
-
 void release_large_bucket(pid_t pid, large_bucket* new_bucket) {
   bucket_list* list = get_all_buckets(pid);
   new_bucket->next = list->large;
@@ -41,5 +61,12 @@ void release_large_bucket(pid_t pid, large_bucket* new_bucket) {
 }
 
 size_t get_size(void* ptr) {
-  return *(size_t*)(ptr - sizeof(size_t));
+  size_t ps = getpagesize();
+  small_bucket* small = find_small(ptr);
+  if (small == NULL) {
+    return *(size_t*)(ptr - sizeof(size_t));
+  }
+  return getpagesize();
 }
+
+#endif

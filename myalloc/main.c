@@ -1,12 +1,15 @@
 #include <string.h>
-//#include "small_bucket.c"
+#include "small_bucket.c"
 #include "large_bucket.c"
 
 void* malloc(size_t size) {
   if (size == 0) {
     return NULL;
   }
-  return add_large(size);
+  if (size > getpagesize() / sizeof(size_t)) {
+    return add_large(size);
+  }
+  return add_small();
 }
 
 void* calloc(size_t elems, size_t bytes_each) {
@@ -17,7 +20,12 @@ void* calloc(size_t elems, size_t bytes_each) {
 
 void free(void* ptr) {
   if (ptr != NULL) {
-    free_large(ptr);
+    small_bucket* buck = find_small(ptr);
+    if (buck == NULL) {
+      free_large(ptr);
+    } else {
+      free_small(buck, ptr);
+    }
   }
 }
 

@@ -1,3 +1,6 @@
+#ifndef _MAP_H_
+#define _MAP_H_
+
 #include <unistd.h>
 #include "small_bucket.h"
 #include "large_bucket.h"
@@ -13,8 +16,8 @@ typedef struct bucket_list {
   struct bucket_list* next;
 } bucket_list;
 
-size_t get_hash(pid_t pid) {
-  return (A * (size_t)pid + B) % MOD;
+size_t get_hash(size_t n) {
+  return (A * n + B) % MOD;
 }
 
 static void* free_page = NULL;
@@ -31,3 +34,11 @@ void* get_memory(size_t len) {
   free_page += len;
   return ptr;
 }
+
+typedef struct small_allocs {
+  small_bucket* bucket;
+  size_t page_addr;
+  struct small_allocs* next;
+} small_allocs;
+
+#endif
