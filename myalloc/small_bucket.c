@@ -1,8 +1,13 @@
-#include "small_bucket.h"
+#include <sys/types.h>
+#include <sys/mman.h>
+#include <unistd.h>
+#include "map.c"
+#include <stdio.h>
 
 void* add_small() {
   pid_t pid = getpid();
-  small_bucket* buck = get_small_bucket(pid);
+  small_bucket* buck = get_small_buckets(pid);
+  small_bucket** copy = &buck;
   while (buck != NULL) {
     size_t mask = buck->mask;
     if (mask != (size_t)(-1)) {
@@ -11,31 +16,25 @@ void* add_small() {
         ++free;
       }
       mask |= 1 << free;
-      return buck->memory + memory_per_bit * free;
+      void* ptr = buck->memory + SMALL_BUCKET_PAGES * getpagesize() / sizeof(size_t) * free;
+      printf("Small bucket allocated at %x\n", (size_t)ptr);
+      return ptr;
     }
     buck = buck->next;
   }
-  small_bucket new_bucket = {
-    .mask = 1,
-    .memory = mmap(NULL, MAX_SMALL, PROT_READ | PROT_WRITE, MAP_ANONYMOUS, -1, 0),
-    .next = NULL
-  };
-  add_small_bucket(pid, &new_bucket);
-  return new_bucket.memory;
+  small_bucket* new_bucket = (small_bucket*)get_memory(sizeof(small_bucket));
+  new_bucket->mask = 1;
+  new_bucket->memory = mmap(NULL, SMALL_BUCKET_PAGES * getpagesize(), PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0),
+  set_small_bucket_by_memory(new_bucket, new_bucket->memory);
+  new_bucket->next = *copy;
+  *copy = new_bucket;
+  return new_bucket->memory;
 }
 
 void free_small(void* ptr) {
-  size_t sz = sizeof(size_t);
-  pid_t pid = (pid_t)(size_t)*(ptr - 2 * sz);
-  small_bucket* buck = get_small_bucket(pid, 1);
-  size_t busy_bits = (size_t)*(ptr - sz);
-  while (buck != NULL) {
-    if (ptr >= buck->memory && ptr < buck->memory + MAX_SMALL) {
-      size_t lo = (size_t)(ptr - buck_memory) / memory_per_bit;
-      size_t hi = lo + busy_bits;
-      buck->mask &= ~((1 << hi) - (1 << lo));
-      return;
-    }
-    buck = buck->next;
-  }
+  small_bucket* buck = get_small_bucket_by_memory(ptr);
+  size_t ps = SMALL_BUCKET_PAGES * getpagesize();
+  size_t bit = buck->memory % ps * sizeof(size_t) / ps;
+  buck->mask ^= 1 << bit;
+  printf("Small bucket freed at %x\n", (size_t)ptr);
 }
