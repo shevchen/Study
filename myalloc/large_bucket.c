@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include "map.h"
 
+#define MIN_USEFUL_PAGES 1
+
 static large_bucket* global_buckets = NULL;
 
 static void* try_alloc(large_bucket** buckets, size_t pages) {
@@ -15,6 +17,12 @@ static void* try_alloc(large_bucket** buckets, size_t pages) {
         last->next = buck->next;
       } else {
         *buckets = (*buckets)->next;
+      }
+      if (buck->pages >= pages + MIN_USEFUL_PAGES) {
+        large_bucket* new_bucket = (large_bucket*)get_memory(sizeof(large_bucket));
+        new_bucket->memory = buck->memory + pages * getpagesize();
+        new_bucket->pages = buck->pages - pages;
+        release_large_bucket(getpid(), new_bucket);
       }
       return buck->memory;
     }
