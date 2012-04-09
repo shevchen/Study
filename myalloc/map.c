@@ -92,6 +92,11 @@ void* get_from_global(size_t length) {
   return ptr;
 }
 
+static void add_to_global(large_bucket* bucket) {
+  bucket->next = global_buckets;
+  global_buckets = bucket;
+}
+
 static bucket_list* get_all_buckets(pid_t pid) {
   size_t hash = get_hash(pid);
   bucket_list* list = map[hash];
@@ -103,6 +108,7 @@ static bucket_list* get_all_buckets(pid_t pid) {
   }
   bucket_list* new_list = (bucket_list*)get_memory(sizeof(bucket_list));
   new_list->pid = pid;
+  new_list->total_memory = 0;
   new_list->next = map[hash];
   map[hash] = new_list;
   return new_list;
@@ -118,10 +124,23 @@ large_bucket** get_large_buckets_addr(pid_t pid) {
   return &list->large;
 }
 
+static void clear_local_memory(bucket_list* list) {
+  while (list->total_memory >= MAX_LOCAL_MEMORY) {
+    large_bucket* first = list->large;
+    list->total_memory -= first->length;
+    add_to_global(first);
+    list->large = first->next;
+  }
+}
+
 void release_large_bucket(pid_t pid, large_bucket* new_bucket) {
   bucket_list* list = get_all_buckets(pid);
   new_bucket->next = list->large;
   list->large = new_bucket;
+  list->total_memory += new_bucket->length;
+  if (list->total_memory >= 2 * MAX_LOCAL_MEMORY) {
+    clear_local_memory(list);
+  }
 }
 
 size_t get_size(void* ptr) {

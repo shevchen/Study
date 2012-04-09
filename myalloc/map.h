@@ -11,6 +11,7 @@
 
 typedef struct bucket_list {
   pid_t pid;
+  size_t total_memory;
   small_bucket* small;
   large_bucket* large;
   struct bucket_list* next;
