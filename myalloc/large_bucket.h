@@ -1,11 +1,11 @@
 #ifndef _LARGE_BUCKET_H_
 #define _LARGE_BUCKET_H_
 
-#define MIN_USEFUL_PAGES 1
+#define MIN_USEFUL_BYTES 256
 
 typedef struct large_bucket {
   void* memory;
-  size_t pages;
+  size_t length;
   struct large_bucket* next;
 } large_bucket;
 
