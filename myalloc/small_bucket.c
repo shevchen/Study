@@ -41,7 +41,7 @@ void* add_small() {
   add_small_bucket_mem(new_bucket, (size_t)new_bucket->memory / (SMALL_BUCKET_PAGES * ps));
   new_bucket->next = *copy;
   *copy = new_bucket;
-  printf("Small bucket allocated at %x\n", (size_t)new_bucket->memory);
+  printf("Small bucket allocated at %x in thread %d\n", (size_t)new_bucket->memory, pid);
   return new_bucket->memory;
 }
 
