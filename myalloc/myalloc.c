@@ -1,4 +1,5 @@
 #include <string.h>
+#include <signal.h>
 #include "small_bucket.h"
 #include "large_bucket.h"
 #include "map.h"
@@ -40,4 +41,12 @@ void* realloc(void* old, size_t size) {
     free(old);
   }
   return ptr;
+}
+
+void* memalign(size_t align, size_t size) {
+  raise(SIGILL);
+}
+
+void* valloc(size_t size) {
+  raise(SIGILL);
 }
