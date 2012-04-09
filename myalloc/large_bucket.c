@@ -42,7 +42,6 @@ void* add_large(size_t size) {
   if (ptr == NULL) {
     ptr = get_from_global(pages);
   }
-  printf("Large bucket of size %d allocated at %x in thread %d\n", pages * PAGE_SIZE, (size_t)ptr, pid);
   *(size_t*)ptr = pages;
   return ptr + sz;
 }
@@ -52,7 +51,6 @@ void free_large(void* ptr) {
   size_t pages = *(size_t*)(ptr - sz);
   large_bucket* new_bucket = (large_bucket*)get_memory(sizeof(large_bucket));
   pid_t pid = getpid();
-  printf("Large bucket of size %d freed at %x in thread %d\n", pages * getpagesize(), (size_t)(ptr - sz), pid);
   new_bucket->memory = ptr - sz;
   new_bucket->pages = pages;
   release_large_bucket(pid, new_bucket);

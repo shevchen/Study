@@ -29,7 +29,6 @@ void* add_small() {
         }
         buck->mask[i] |= 1 << free;
         void* ptr = buck->memory + ps / (sizeof(size_t) * 8) * free;
-        printf("Small bucket allocated at %x in thread %d\n", (size_t)ptr, pid);
         return ptr;
       }
     }
@@ -41,7 +40,6 @@ void* add_small() {
   add_small_bucket_mem(new_bucket, (size_t)new_bucket->memory / (SMALL_BUCKET_PAGES * ps));
   new_bucket->next = *copy;
   *copy = new_bucket;
-  printf("Small bucket allocated at %x\n", (size_t)new_bucket->memory);
   return new_bucket->memory;
 }
 
@@ -51,5 +49,4 @@ void free_small(small_bucket* buck, void* ptr) {
   size_t maskN = (size_t)ptr % (ps * SMALL_BUCKET_PAGES) / ps;
   size_t bit = (size_t)ptr % ps * (sizeof(size_t) * 8) / ps;
   buck->mask[maskN] ^= 1 << bit;
-  printf("Small bucket freed at %x in thread %d\n", (size_t)ptr, getpid());
 }
