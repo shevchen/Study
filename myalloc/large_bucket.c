@@ -37,8 +37,8 @@ void* add_large(size_t size) {
   size_t sz = sizeof(size_t);
   size_t pages = (size + sz + PAGE_SIZE - 1) / PAGE_SIZE;
   pid_t pid = getpid();
-  large_bucket* buckets = get_large_buckets(pid);
-  void* ptr = try_alloc(&buckets, pages);
+  large_bucket** buckets_addr = get_large_buckets_addr(pid);
+  void* ptr = try_alloc(buckets_addr, pages);
   if (ptr == NULL) {
     ptr = get_from_global(pages);
   }

@@ -67,9 +67,9 @@ small_bucket* get_small_buckets(pid_t pid) {
   return list->small;
 }
 
-large_bucket* get_large_buckets(pid_t pid) {
+large_bucket** get_large_buckets_addr(pid_t pid) {
   bucket_list* list = get_all_buckets(pid);
-  return list->large;
+  return &list->large;
 }
 
 void release_large_bucket(pid_t pid, large_bucket* new_bucket) {
