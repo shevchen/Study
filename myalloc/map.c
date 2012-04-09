@@ -17,11 +17,11 @@ void* get_memory(size_t len) {
   return ptr;
 }
 
-static small_allocs* alloc_map[MOD];
-
 static size_t get_hash(size_t n) {
   return (A * n + B) % MOD;
 }
+
+static small_allocs* alloc_map[MOD];
 
 small_bucket* find_small(void* ptr) {
   size_t page_addr = (size_t)ptr / (getpagesize() * SMALL_BUCKET_PAGES);
@@ -45,6 +45,40 @@ void add_small_bucket_mem(small_bucket* bucket, size_t page_addr) {
 }
 
 static bucket_list* map[MOD];
+
+static large_bucket* global_buckets = NULL;
+
+void* try_alloc(large_bucket** buckets, size_t pages) {
+  large_bucket* buck = *buckets;
+  large_bucket* last = NULL;
+  while (buck != NULL) {
+    if (buck->pages >= pages) {
+      if (last != NULL) {
+        last->next = buck->next;
+      } else {
+        *buckets = (*buckets)->next;
+      }
+      if (buck->pages >= pages + MIN_USEFUL_PAGES) {
+        large_bucket* new_bucket = (large_bucket*)get_memory(sizeof(large_bucket));
+        new_bucket->memory = buck->memory + pages * getpagesize();
+        new_bucket->pages = buck->pages - pages;
+        release_large_bucket(getpid(), new_bucket);
+      }
+      return buck->memory;
+    }
+    last = buck;
+    buck = buck->next;
+  }
+  return NULL;
+}
+
+void* get_from_global(size_t pages) {
+  void* ptr = try_alloc(&global_buckets, pages);
+  if (ptr == NULL) {
+    ptr = mmap(NULL, pages * getpagesize(), PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+  }
+  return ptr;
+}
 
 static bucket_list* get_all_buckets(pid_t pid) {
   size_t hash = get_hash(pid);

@@ -3,42 +3,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include "map.h"
-
-#define MIN_USEFUL_PAGES 1
-
-static large_bucket* global_buckets = NULL;
-
-static void* try_alloc(large_bucket** buckets, size_t pages) {
-  large_bucket* buck = *buckets;
-  large_bucket* last = NULL;
-  while (buck != NULL) {
-    if (buck->pages >= pages) {
-      if (last != NULL) {
-        last->next = buck->next;
-      } else {
-        *buckets = (*buckets)->next;
-      }
-      if (buck->pages >= pages + MIN_USEFUL_PAGES) {
-        large_bucket* new_bucket = (large_bucket*)get_memory(sizeof(large_bucket));
-        new_bucket->memory = buck->memory + pages * getpagesize();
-        new_bucket->pages = buck->pages - pages;
-        release_large_bucket(getpid(), new_bucket);
-      }
-      return buck->memory;
-    }
-    last = buck;
-    buck = buck->next;
-  }
-  return NULL;
-}
-
-static void* get_from_global(size_t pages) {
-  void* ptr = try_alloc(&global_buckets, pages);
-  if (ptr == NULL) {
-    ptr = mmap(NULL, pages * getpagesize(), PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-  }
-  return ptr;
-}
+#include "large_bucket.h"
 
 void* add_large(size_t size) {
   int PAGE_SIZE = getpagesize();
