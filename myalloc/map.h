@@ -16,29 +16,18 @@ typedef struct bucket_list {
   struct bucket_list* next;
 } bucket_list;
 
-size_t get_hash(size_t n) {
-  return (A * n + B) % MOD;
-}
-
-static void* free_page = NULL;
-static size_t free_size = 0;
-
-void* get_memory(size_t len) {
-  // only for little local segments
-  if (free_page == NULL || free_size < len) {
-    free_size = getpagesize();
-    free_page = mmap(NULL, free_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-  }
-  free_size -= len;
-  void* ptr = free_page;
-  free_page += len;
-  return ptr;
-}
-
 typedef struct small_allocs {
   small_bucket* bucket;
   size_t page_addr;
   struct small_allocs* next;
 } small_allocs;
+
+void* get_memory(size_t);
+small_bucket* find_small(void*);
+void add_small_bucket_mem(small_bucket*, size_t);
+small_bucket* get_small_buckets(pid_t);
+large_bucket* get_large_buckets(pid_t);
+void release_large_bucket(pid_t, large_bucket*);
+size_t get_size(void*);
 
 #endif

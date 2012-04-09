@@ -1,12 +1,30 @@
 #include <sys/types.h>
 #include <sys/mman.h>
 #include <unistd.h>
-#include "map.c"
 #include <stdio.h>
+#include "map.h"
 
 static large_bucket* global_buckets = NULL;
 
-void* get_from_global(size_t pages) {
+static void* try_alloc(large_bucket** buckets, size_t pages) {
+  large_bucket* buck = *buckets;
+  large_bucket* last = NULL;
+  while (buck != NULL) {
+    if (buck->pages >= pages) {
+      if (last != NULL) {
+        last->next = buck->next;
+      } else {
+        *buckets = (*buckets)->next;
+      }
+      return buck->memory;
+    }
+    last = buck;
+    buck = buck->next;
+  }
+  return NULL;
+}
+
+static void* get_from_global(size_t pages) {
   void* ptr = try_alloc(&global_buckets, pages);
   if (ptr == NULL) {
     ptr = mmap(NULL, pages * getpagesize(), PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);

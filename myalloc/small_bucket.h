@@ -11,4 +11,7 @@ typedef struct small_bucket {
   struct small_bucket* next;
 } small_bucket;
 
+void* add_small();
+void free_small(small_bucket*, void*);
+
 #endif

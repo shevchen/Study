@@ -1,10 +1,10 @@
 #include <sys/types.h>
 #include <sys/mman.h>
 #include <unistd.h>
-#include "map.c"
 #include <stdio.h>
+#include "map.h"
 
-void* get_aligned_memory(size_t len) {
+static void* get_aligned_memory(size_t len) {
   size_t not_aligned = (size_t)mmap(NULL, 2 * len, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
   size_t to = not_aligned + 2 * len - not_aligned % len;
   size_t from = to - len;

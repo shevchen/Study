@@ -1,6 +1,7 @@
 #include <string.h>
-#include "small_bucket.c"
-#include "large_bucket.c"
+#include "small_bucket.h"
+#include "large_bucket.h"
+#include "map.h"
 
 void* malloc(size_t size) {
   if (size == 0) {

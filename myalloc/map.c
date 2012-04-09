@@ -1,9 +1,25 @@
-#ifndef _MAP_C_
-#define _MAP_C_
-
 #include "map.h"
 
+static void* free_page = NULL;
+static size_t free_size = 0;
+
+void* get_memory(size_t len) {
+  // only for little local segments
+  if (free_page == NULL || free_size < len) {
+    free_size = getpagesize();
+    free_page = mmap(NULL, free_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+  }
+  free_size -= len;
+  void* ptr = free_page;
+  free_page += len;
+  return ptr;
+}
+
 static small_allocs* alloc_map[MOD];
+
+static size_t get_hash(size_t n) {
+  return (A * n + B) % MOD;
+}
 
 small_bucket* find_small(void* ptr) {
   size_t page_addr = (size_t)ptr / (getpagesize() * SMALL_BUCKET_PAGES);
@@ -68,5 +84,3 @@ size_t get_size(void* ptr) {
   }
   return getpagesize() / (sizeof(size_t) * 8);
 }
-
-#endif
