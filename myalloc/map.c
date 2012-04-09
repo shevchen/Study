@@ -1,3 +1,5 @@
+#include <unistd.h>
+#include <sys/mman.h>
 #include "map.h"
 
 static void* free_page = NULL;

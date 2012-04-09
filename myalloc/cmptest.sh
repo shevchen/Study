@@ -1,1 +1,1 @@
-gcc -ggdb test.c -o test.o
+gcc -ggdb -L. -lmyalloc test.c -o test
