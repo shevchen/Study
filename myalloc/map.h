@@ -26,10 +26,10 @@ typedef struct small_allocs {
 void* get_memory(size_t);
 small_bucket* find_small(void*);
 void add_small_bucket_mem(small_bucket*, size_t);
-void* try_alloc(large_bucket**, size_t);
+void* try_alloc(large_bucket**, size_t, bucket_list*);
+void* local_alloc(size_t);
 void* get_from_global(size_t);
 small_bucket* get_small_buckets(pid_t);
-large_bucket** get_large_buckets_addr(pid_t);
 void release_large_bucket(pid_t, large_bucket*);
 size_t get_size(void*);
 

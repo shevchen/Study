@@ -6,13 +6,11 @@
 #include "large_bucket.h"
 
 void* add_large(size_t length) {
-  pid_t pid = getpid();
-  large_bucket** buckets_addr = get_large_buckets_addr(pid);
-  void* ptr = try_alloc(buckets_addr, length);
+  void* ptr = local_alloc(length);
   if (ptr == NULL) {
     ptr = get_from_global(length);
   }
-  printf("Large bucket of size %d allocated at %x in thread %d\n", length, (size_t)ptr, pid);
+  printf("Large bucket of size %d allocated at %x in thread %d\n", length, (size_t)ptr, getpid());
   *(size_t*)ptr = length;
   return ptr + sizeof(size_t);
 }

@@ -48,6 +48,23 @@ static bucket_list* map[MOD];
 
 static large_bucket* global_buckets = NULL;
 
+static bucket_list* get_all_buckets(pid_t pid) {
+  size_t hash = get_hash(pid);
+  bucket_list* list = map[hash];
+  while (list != NULL) {
+    if (list->pid == pid) {
+      return list;
+    }
+    list = list->next;
+  }
+  bucket_list* new_list = (bucket_list*)get_memory(sizeof(bucket_list));
+  new_list->pid = pid;
+  new_list->total_memory = 0;
+  new_list->next = map[hash];
+  map[hash] = new_list;
+  return new_list;
+}
+
 static void add_useful_part(void* memory, size_t length) {
   large_bucket* new_bucket = (large_bucket*)get_memory(sizeof(large_bucket));
   new_bucket->memory = memory;
@@ -55,7 +72,7 @@ static void add_useful_part(void* memory, size_t length) {
   release_large_bucket(getpid(), new_bucket);
 }
 
-void* try_alloc(large_bucket** buckets, size_t length) {
+void* try_alloc(large_bucket** buckets, size_t length, bucket_list* all) {
   large_bucket* buck = *buckets;
   large_bucket* last = NULL;
   while (buck != NULL) {
@@ -67,6 +84,10 @@ void* try_alloc(large_bucket** buckets, size_t length) {
       }
       if (buck->length >= length + MIN_USEFUL_BYTES) {
         add_useful_part(buck->memory + length, buck->length - length);
+        buck->length = length;
+      }
+      if (all != NULL) {
+        all->total_memory -= buck->length;
       }
       return buck->memory;
     }
@@ -76,8 +97,13 @@ void* try_alloc(large_bucket** buckets, size_t length) {
   return NULL;
 }
 
+void* local_alloc(size_t length) {
+  bucket_list* list = get_all_buckets(getpid());
+  return try_alloc(&list->large, length, list);
+}
+
 void* get_from_global(size_t length) {
-  void* ptr = try_alloc(&global_buckets, length);
+  void* ptr = try_alloc(&global_buckets, length, NULL);
   if (ptr == NULL) {
     size_t page_size = getpagesize();
     int delta = (page_size - length) % page_size;
@@ -97,31 +123,9 @@ static void add_to_global(large_bucket* bucket) {
   global_buckets = bucket;
 }
 
-static bucket_list* get_all_buckets(pid_t pid) {
-  size_t hash = get_hash(pid);
-  bucket_list* list = map[hash];
-  while (list != NULL) {
-    if (list->pid == pid) {
-      return list;
-    }
-    list = list->next;
-  }
-  bucket_list* new_list = (bucket_list*)get_memory(sizeof(bucket_list));
-  new_list->pid = pid;
-  new_list->total_memory = 0;
-  new_list->next = map[hash];
-  map[hash] = new_list;
-  return new_list;
-}
-
 small_bucket* get_small_buckets(pid_t pid) {
   bucket_list* list = get_all_buckets(pid);
   return list->small;
-}
-
-large_bucket** get_large_buckets_addr(pid_t pid) {
-  bucket_list* list = get_all_buckets(pid);
-  return &list->large;
 }
 
 static void clear_local_memory(bucket_list* list) {
