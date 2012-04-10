@@ -20,6 +20,7 @@ typedef struct bucket_list {
 } bucket_list;
 
 void* get_memory(size_t);
+size_t get_hash(size_t);
 bucket_list* get_all_buckets(pid_t);
 size_t get_size(void*);
 

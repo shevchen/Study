@@ -1,6 +1,6 @@
 #include <unistd.h>
-#include <sys/mman.h>
 #include <pthread.h>
+#include <sys/mman.h>
 #include "small_func.h"
 #include "large_func.h"
 #include "map.h"
@@ -23,7 +23,7 @@ void* get_memory(size_t len) {
   return ptr;
 }
 
-static size_t get_hash(size_t n) {
+size_t get_hash(size_t n) {
   return (A * n + B) % MOD;
 }
 
