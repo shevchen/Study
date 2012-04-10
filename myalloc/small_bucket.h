@@ -13,6 +13,7 @@ typedef struct small_bucket {
 } small_bucket;
 
 void* add_small();
-void free_small(small_bucket*, void*);
+void free_small(void*);
+int exists_small(void*);
 
 #endif

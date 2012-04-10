@@ -19,20 +19,8 @@ typedef struct bucket_list {
   struct bucket_list* next;
 } bucket_list;
 
-typedef struct small_allocs {
-  small_bucket* bucket;
-  size_t page_addr;
-  struct small_allocs* next;
-} small_allocs;
-
 void* get_memory(size_t);
-void* add_to_small(pid_t);
-small_bucket* find_small(void*);
-void add_small_bucket_mem(small_bucket*, size_t);
-void release_free(pid_t, large_bucket*);
-void* try_alloc(large_bucket**, size_t, bucket_list*);
-void* local_alloc(size_t);
-void* get_from_global(size_t);
+bucket_list* get_all_buckets(pid_t);
 size_t get_size(void*);
 
 #endif

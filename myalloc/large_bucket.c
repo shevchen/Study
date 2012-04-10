@@ -2,7 +2,7 @@
 #include <sys/mman.h>
 #include <unistd.h>
 #include <stdio.h>
-#include "map.h"
+#include "large_func.h"
 #include "large_bucket.h"
 
 void* add_large(size_t length) {
@@ -23,5 +23,5 @@ void free_large(void* ptr) {
   printf("Large bucket of size %d freed at %x in thread %d\n", length, (size_t)(ptr - sz), pid);
   new_bucket->memory = ptr - sz;
   new_bucket->length = length;
-  release_free(pid, new_bucket);
+  release_free_large(pid, new_bucket);
 }

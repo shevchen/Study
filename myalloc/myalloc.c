@@ -2,7 +2,6 @@
 #include <signal.h>
 #include "small_bucket.h"
 #include "large_bucket.h"
-#include "map.h"
 
 void* malloc(size_t size) {
   if (size == 0) {
@@ -22,11 +21,10 @@ void* calloc(size_t elems, size_t bytes_each) {
 
 void free(void* ptr) {
   if (ptr != NULL) {
-    small_bucket* buck = find_small(ptr);
-    if (buck == NULL) {
-      free_large(ptr);
+    if (exists_small(ptr)) {
+      free_small(ptr);
     } else {
-      free_small(buck, ptr);
+      free_large(ptr);
     }
   }
 }
