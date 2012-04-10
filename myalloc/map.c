@@ -21,11 +21,81 @@ void* get_memory(size_t len) {
   return ptr;
 }
 
+static void* get_aligned_memory(size_t len) {
+  size_t not_aligned = (size_t)mmap(NULL, 2 * len, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+  size_t to = not_aligned + 2 * len - not_aligned % len;
+  size_t from = to - len;
+  munmap((void*)not_aligned, from - not_aligned);
+  munmap((void*)to, not_aligned + 2 * len - to);
+  return (void*)from;
+}
+
 static size_t get_hash(size_t n) {
   return (A * n + B) % MOD;
 }
 
+static bucket_list* map[MOD] = {NULL};
+static pthread_mutex_t main_mutex[MOD] = {PTHREAD_MUTEX_INITIALIZER};
+
+static large_bucket* global_buckets = NULL;
+static pthread_mutex_t global_buckets_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 static small_allocs* alloc_map[MOD] = {NULL};
+static pthread_mutex_t alloc_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+static bucket_list* get_all_buckets(pid_t pid) {
+  size_t hash = get_hash(pid);
+  bucket_list* list = map[hash];
+  while (list != NULL) {
+    if (list->pid == pid) {
+      return list;
+    }
+    list = list->next;
+  }
+  bucket_list* new_list = (bucket_list*)get_memory(sizeof(bucket_list));
+  new_list->pid = pid;
+  new_list->total_memory = 0;
+  pthread_mutex_init(&new_list->small_mutex, NULL);
+  pthread_mutex_init(&new_list->large_mutex, NULL);
+  pthread_mutex_lock(&main_mutex[hash]);
+  new_list->next = map[hash];
+  map[hash] = new_list;
+  pthread_mutex_unlock(&main_mutex[hash]);
+  return new_list;
+}
+
+void* add_to_small(pid_t pid) {
+  bucket_list* list = get_all_buckets(pid);
+  small_bucket* buck = list->small;
+  size_t ps = getpagesize();
+  while (buck != NULL) {
+    pthread_mutex_lock(&buck->mutex);
+    int i;
+    for (i = 0; i < SMALL_BUCKET_PAGES; ++i) {
+      size_t mask = buck->mask[i];
+      if (mask != (size_t)(-1)) {
+        size_t free = 0;
+        while (mask & (1 << free)) {
+          ++free;
+        }
+        buck->mask[i] |= 1 << free;
+        void* ptr = buck->memory + ps / (sizeof(size_t) * 8) * free;
+        return ptr;
+      }
+    }
+    pthread_mutex_unlock(&buck->mutex);
+    buck = buck->next;
+  }
+  small_bucket* new_bucket = (small_bucket*)get_memory(sizeof(small_bucket));
+  new_bucket->mask[0] = 1;
+  new_bucket->memory = get_aligned_memory(SMALL_BUCKET_PAGES * ps);
+  add_small_bucket_mem(new_bucket, (size_t)new_bucket->memory / (SMALL_BUCKET_PAGES * ps));
+  pthread_mutex_lock(&list->small_mutex);
+  new_bucket->next = list->small;
+  list->small = new_bucket;
+  pthread_mutex_unlock(&list->small_mutex);
+  return new_bucket->memory;
+}
 
 small_bucket* find_small(void* ptr) {
   size_t page_addr = (size_t)ptr / (getpagesize() * SMALL_BUCKET_PAGES);
@@ -44,34 +114,10 @@ void add_small_bucket_mem(small_bucket* bucket, size_t page_addr) {
   small_allocs* new_alloc = (small_allocs*)get_memory(sizeof(small_allocs));
   new_alloc->bucket = bucket;
   new_alloc->page_addr = page_addr;
+  pthread_mutex_lock(&alloc_mutex);
   new_alloc->next = alloc_map[hash];
   alloc_map[hash] = new_alloc;
-}
-
-static bucket_list* map[MOD] = {NULL};
-static pthread_mutex_t main_mutex[MOD] = {PTHREAD_MUTEX_INITIALIZER};
-
-static large_bucket* global_buckets = NULL;
-static pthread_mutex_t global_buckets_mutex = PTHREAD_MUTEX_INITIALIZER;
-
-static bucket_list* get_all_buckets(pid_t pid) {
-  size_t hash = get_hash(pid);
-  bucket_list* list = map[hash];
-  while (list != NULL) {
-    if (list->pid == pid) {
-      return list;
-    }
-    list = list->next;
-  }
-  bucket_list* new_list = (bucket_list*)get_memory(sizeof(bucket_list));
-  new_list->pid = pid;
-  new_list->total_memory = 0;
-  pthread_mutex_init(&new_list->mutex, NULL);
-  pthread_mutex_lock(&main_mutex[hash]);
-  new_list->next = map[hash];
-  map[hash] = new_list;
-  pthread_mutex_unlock(&main_mutex[hash]);
-  return new_list;
+  pthread_mutex_unlock(&alloc_mutex);
 }
 
 static void add_useful_part(void* memory, size_t length) {
@@ -109,9 +155,9 @@ void* try_alloc(large_bucket** buckets, size_t length, bucket_list* all) {
 
 void* local_alloc(size_t length) {
   bucket_list* list = get_all_buckets(getpid());
-  pthread_mutex_lock(&list->mutex);
+  pthread_mutex_lock(&list->large_mutex);
   void* ptr = try_alloc(&list->large, length, list);
-  pthread_mutex_unlock(&list->mutex);
+  pthread_mutex_unlock(&list->large_mutex);
   return ptr;
 }
 
@@ -140,29 +186,24 @@ static void add_to_global(large_bucket* bucket) {
   pthread_mutex_unlock(&global_buckets_mutex);
 }
 
-small_bucket* get_small_buckets(pid_t pid) {
-  bucket_list* list = get_all_buckets(pid);
-  return list->small;
-}
-
 static void clear_local_memory(bucket_list* list) {
-  pthread_mutex_lock(&list->mutex);
+  pthread_mutex_lock(&list->large_mutex);
   while (list->total_memory >= MAX_LOCAL_MEMORY) {
     large_bucket* first = list->large;
     list->total_memory -= first->length;
     add_to_global(first);
     list->large = first->next;
   }
-  pthread_mutex_unlock(&list->mutex);
+  pthread_mutex_unlock(&list->large_mutex);
 }
 
 void release_large_bucket(pid_t pid, large_bucket* new_bucket) {
   bucket_list* list = get_all_buckets(pid);
-  pthread_mutex_lock(&list->mutex);
+  pthread_mutex_lock(&list->large_mutex);
   new_bucket->next = list->large;
   list->large = new_bucket;
   list->total_memory += new_bucket->length;
-  pthread_mutex_unlock(&list->mutex);
+  pthread_mutex_unlock(&list->large_mutex);
   if (list->total_memory >= 2 * MAX_LOCAL_MEMORY) {
     clear_local_memory(list);
   }
