@@ -29,10 +29,10 @@ void* get_memory(size_t);
 void* add_to_small(pid_t);
 small_bucket* find_small(void*);
 void add_small_bucket_mem(small_bucket*, size_t);
+void release_free(pid_t, large_bucket*);
 void* try_alloc(large_bucket**, size_t, bucket_list*);
 void* local_alloc(size_t);
 void* get_from_global(size_t);
-void release_large_bucket(pid_t, large_bucket*);
 size_t get_size(void*);
 
 #endif

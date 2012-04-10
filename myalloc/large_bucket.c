@@ -23,5 +23,5 @@ void free_large(void* ptr) {
   printf("Large bucket of size %d freed at %x in thread %d\n", length, (size_t)(ptr - sz), pid);
   new_bucket->memory = ptr - sz;
   new_bucket->length = length;
-  release_large_bucket(pid, new_bucket);
+  release_free(pid, new_bucket);
 }

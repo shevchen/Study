@@ -80,6 +80,7 @@ void* add_to_small(pid_t pid) {
         }
         buck->mask[i] |= 1 << free;
         void* ptr = buck->memory + ps / (sizeof(size_t) * 8) * free;
+        pthread_mutex_unlock(&buck->mutex);
         return ptr;
       }
     }
@@ -118,6 +119,42 @@ void add_small_bucket_mem(small_bucket* bucket, size_t page_addr) {
   new_alloc->next = alloc_map[hash];
   alloc_map[hash] = new_alloc;
   pthread_mutex_unlock(&alloc_mutex);
+}
+
+static void add_to_global(large_bucket* bucket) {
+  pthread_mutex_lock(&global_buckets_mutex);
+  bucket->next = global_buckets;
+  global_buckets = bucket;
+  pthread_mutex_unlock(&global_buckets_mutex);
+}
+
+static void clear_local_memory(bucket_list* list) {
+  pthread_mutex_lock(&list->large_mutex);
+  while (list->total_memory >= MAX_LOCAL_MEMORY) {
+    large_bucket* first = list->large;
+    list->total_memory -= first->length;
+    add_to_global(first);
+    list->large = first->next;
+  }
+  pthread_mutex_unlock(&list->large_mutex);
+}
+
+static void release_large_bucket(pid_t pid, large_bucket* new_bucket) {
+  // needs external lock
+  bucket_list* list = get_all_buckets(pid);
+  new_bucket->next = list->large;
+  list->large = new_bucket;
+  list->total_memory += new_bucket->length;
+  if (list->total_memory >= 2 * MAX_LOCAL_MEMORY) {
+    clear_local_memory(list);
+  }
+}
+
+void release_free(pid_t pid, large_bucket* new_bucket) {
+  bucket_list* list = get_all_buckets(pid);
+  pthread_mutex_lock(&list->large_mutex);
+  release_large_bucket(pid, new_bucket);
+  pthread_mutex_unlock(&list->large_mutex);
 }
 
 static void add_useful_part(void* memory, size_t length) {
@@ -177,36 +214,6 @@ void* get_from_global(size_t length) {
     }
   }
   return ptr;
-}
-
-static void add_to_global(large_bucket* bucket) {
-  pthread_mutex_lock(&global_buckets_mutex);
-  bucket->next = global_buckets;
-  global_buckets = bucket;
-  pthread_mutex_unlock(&global_buckets_mutex);
-}
-
-static void clear_local_memory(bucket_list* list) {
-  pthread_mutex_lock(&list->large_mutex);
-  while (list->total_memory >= MAX_LOCAL_MEMORY) {
-    large_bucket* first = list->large;
-    list->total_memory -= first->length;
-    add_to_global(first);
-    list->large = first->next;
-  }
-  pthread_mutex_unlock(&list->large_mutex);
-}
-
-void release_large_bucket(pid_t pid, large_bucket* new_bucket) {
-  bucket_list* list = get_all_buckets(pid);
-  pthread_mutex_lock(&list->large_mutex);
-  new_bucket->next = list->large;
-  list->large = new_bucket;
-  list->total_memory += new_bucket->length;
-  pthread_mutex_unlock(&list->large_mutex);
-  if (list->total_memory >= 2 * MAX_LOCAL_MEMORY) {
-    clear_local_memory(list);
-  }
 }
 
 size_t get_size(void* ptr) {
