@@ -6,6 +6,7 @@
 #include "large_bucket.h"
 
 void* add_large(size_t length) {
+  length += sizeof(size_t);
   void* ptr = local_alloc(length);
   if (ptr == NULL) {
     ptr = get_from_global(length);
