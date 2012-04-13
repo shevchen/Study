@@ -24,9 +24,8 @@ static void clear_local_memory(bucket_list* list) {
   //pthread_mutex_unlock(&list->large_mutex);
 }
 
-static void release_large_bucket(pid_t pid, large_bucket* new_bucket) {
+static void release_large_bucket(pid_t pid, large_bucket* new_bucket, bucket_list* list) {
   // needs external lock
-  bucket_list* list = get_all_buckets(pid);
   new_bucket->next = list->large;
   list->large = new_bucket;
   list->total_memory += new_bucket->length;
@@ -38,7 +37,7 @@ static void release_large_bucket(pid_t pid, large_bucket* new_bucket) {
 void release_free_large(pid_t pid, large_bucket* new_bucket) {
   bucket_list* list = get_all_buckets(pid);
   //pthread_mutex_lock(&list->large_mutex);
-  release_large_bucket(pid, new_bucket);
+  release_large_bucket(pid, new_bucket, list);
   //pthread_mutex_unlock(&list->large_mutex);
 }
 
@@ -46,7 +45,8 @@ static void add_useful_part(void* memory, size_t length) {
   large_bucket* new_bucket = (large_bucket*)get_memory(sizeof(large_bucket));
   new_bucket->memory = memory;
   new_bucket->length = length;
-  release_large_bucket(getpid(), new_bucket);
+  pid_t pid = getpid();
+  release_large_bucket(pid, new_bucket, get_all_buckets(pid));
 }
 
 void* try_alloc(large_bucket** buckets, size_t length, bucket_list* all) {
@@ -62,7 +62,6 @@ void* try_alloc(large_bucket** buckets, size_t length, bucket_list* all) {
       }
       if (buck->length >= length + MIN_USEFUL_BYTES) {
         add_useful_part(buck->memory + length, buck->length - length);
-        buck->length = length;
       }
       if (all != NULL) {
         all->total_memory -= buck->length;
