@@ -1,1 +1,1 @@
-gcc -ggdb -fno-builtin -L. -lmyalloc test.c -o test
+gcc -ggdb -O0 -fno-builtin -L. -lmyalloc test.c -o test
