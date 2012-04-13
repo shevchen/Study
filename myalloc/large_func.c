@@ -1,26 +1,44 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <sys/mman.h>
+#include "large_bucket.h"
 #include "map.h"
 
 static large_bucket* global_buckets = NULL;
+static size_t global_total_memory = 0;
 static pthread_mutex_t global_buckets_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static void add_to_global(large_bucket* bucket) {
   pthread_mutex_lock(&global_buckets_mutex);
   bucket->next = global_buckets;
   global_buckets = bucket;
+  global_total_memory += bucket->length;
+  pthread_mutex_unlock(&global_buckets_mutex);
+}
+
+static void clear_global_memory() {
+  pthread_mutex_lock(&global_buckets_mutex);
+  while (global_total_memory > MAX_GLOBAL_MEMORY) {
+    global_total_memory -= global_buckets->length;
+    if ((size_t)global_buckets->memory % getpagesize() == 0) {
+      munmap(global_buckets->memory, global_buckets->length);
+    }
+    global_buckets = global_buckets->next;
+  }
   pthread_mutex_unlock(&global_buckets_mutex);
 }
 
 static void clear_local_memory(bucket_list* list) {
   // needs external lock
-  while (list->total_memory >= MAX_LOCAL_MEMORY) {
+  while (list->total_memory > MAX_LOCAL_MEMORY) {
     large_bucket* first = list->large;
     large_bucket* next = first->next;
     list->total_memory -= first->length;
     add_to_global(first);
     list->large = next;
+  }
+  if (global_total_memory > 2 * MAX_GLOBAL_MEMORY) {
+    clear_global_memory();
   }
 }
 

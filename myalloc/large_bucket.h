@@ -3,6 +3,7 @@
 
 #define MIN_USEFUL_BYTES 256
 #define MAX_LOCAL_MEMORY 4194304
+#define MAX_GLOBAL_MEMORY 67108864
 
 typedef struct large_bucket {
   void* memory;
