@@ -14,9 +14,9 @@ void main() {
   }
   printf("%d = 840\n", sum);
   free(mem);
-  mem = (int*)malloc(305 * sizeof(int));
+  mem = (int*)malloc(30 * sizeof(int));
   mem[0] = 239;
-  mem[304] = 366;
+  mem[29] = 366;
   size_t* mem2 = (size_t*)malloc(1000000 * sizeof(size_t));
   mem2[123456] = 654321;
   mem2[0] = 0;
