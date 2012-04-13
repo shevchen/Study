@@ -2,7 +2,7 @@
 #define _MAP_H_
 
 #include <unistd.h>
-//#include <pthread.h>
+#include <pthread.h>
 #include "small_bucket.h"
 #include "large_bucket.h"
 
@@ -13,7 +13,7 @@
 typedef struct bucket_list {
   pid_t pid;
   size_t total_memory;
-  //pthread_mutex_t small_mutex, large_mutex;
+  pthread_mutex_t small_mutex, large_mutex;
   small_bucket* small;
   large_bucket* large;
   struct bucket_list* next;

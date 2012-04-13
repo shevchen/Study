@@ -10,8 +10,7 @@ void* malloc(size_t size) {
   if (size > getpagesize() / (sizeof(size_t) * 8)) {
     return add_large(size);
   }
-  //return add_small();
-  return add_large(size);
+  return add_small();
 }
 
 void* calloc(size_t elems, size_t bytes_each) {
@@ -22,9 +21,9 @@ void* calloc(size_t elems, size_t bytes_each) {
 
 void free(void* ptr) {
   if (ptr != NULL) {
-    if (exists_small(ptr)) {
-      //free_small(ptr);
-      free_large(ptr);
+    small_bucket* small = get_small(ptr);
+    if (small != NULL) {
+      free_small(ptr, small);
     } else {
       free_large(ptr);
     }

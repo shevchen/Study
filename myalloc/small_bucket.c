@@ -1,26 +1,21 @@
-#include <sys/types.h>
-#include <sys/mman.h>
 #include <unistd.h>
-#include <stdio.h>
+#include <pthread.h>
 #include "small_func.h"
 
 void* add_small() {
-  pid_t pid = getpid();
-  void* ptr = add_to_small(pid);
-  printf("Small bucket allocated at %x in thread %d\n", (size_t)ptr, pid);
-  return ptr;
+  return add_another_small(getpid());
 }
 
-void free_small(void* ptr) {
-  small_bucket* buck = find_small(ptr);
+void free_small(void* ptr, small_bucket* buck) {
   size_t ps = getpagesize();
   size_t sz = sizeof(size_t);
   size_t maskN = (size_t)ptr % (ps * SMALL_BUCKET_PAGES) / ps;
   size_t bit = (size_t)ptr % ps * (sizeof(size_t) * 8) / ps;
+  pthread_mutex_lock(&buck->mutex);
   buck->mask[maskN] ^= 1 << bit;
-  printf("Small bucket freed at %x in thread %d\n", (size_t)ptr, getpid());
+  pthread_mutex_unlock(&buck->mutex);
 }
 
-int exists_small(void* ptr) {
-  return find_small(ptr) != NULL;
+small_bucket* get_small(void* ptr) {
+  return find_small(ptr);
 }

@@ -10,6 +10,6 @@ typedef struct small_allocs {
 } small_allocs;
 
 small_bucket* find_small(void*);
-void* add_to_small(pid_t);
+void* add_another_small(pid_t);
 
 #endif
