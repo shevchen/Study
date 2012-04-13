@@ -10,7 +10,8 @@ void* malloc(size_t size) {
   if (size > getpagesize() / (sizeof(size_t) * 8)) {
     return add_large(size);
   }
-  return add_small();
+  //return add_small();
+  return add_large(size);
 }
 
 void* calloc(size_t elems, size_t bytes_each) {
@@ -22,7 +23,8 @@ void* calloc(size_t elems, size_t bytes_each) {
 void free(void* ptr) {
   if (ptr != NULL) {
     if (exists_small(ptr)) {
-      free_small(ptr);
+      //free_small(ptr);
+      free_large(ptr);
     } else {
       free_large(ptr);
     }
