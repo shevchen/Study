@@ -17,9 +17,10 @@ static void clear_local_memory(bucket_list* list) {
   // needs external lock
   while (list->total_memory >= MAX_LOCAL_MEMORY) {
     large_bucket* first = list->large;
+    large_bucket* next = first->next;
     list->total_memory -= first->length;
     add_to_global(first);
-    list->large = first->next;
+    list->large = next;
   }
 }
 

@@ -15,5 +15,6 @@ typedef struct small_bucket {
 void* add_small();
 void free_small(void*, small_bucket*);
 small_bucket* get_small(void*);
+size_t max_small_size();
 
 #endif

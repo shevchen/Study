@@ -19,3 +19,7 @@ void free_small(void* ptr, small_bucket* buck) {
 small_bucket* get_small(void* ptr) {
   return find_small(ptr);
 }
+
+size_t max_small_size() {
+  return getpagesize() / (sizeof(size_t) * 8);
+}

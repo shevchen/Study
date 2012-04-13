@@ -7,10 +7,11 @@ void* malloc(size_t size) {
   if (size == 0) {
     return NULL;
   }
-  if (size > getpagesize() / (sizeof(size_t) * 8)) {
-    return add_large(size);
+  if (size <= max_small_size()) {
+    return add_small();
   }
-  return add_small();
+  size += sizeof(size_t);
+  return add_large(size);
 }
 
 void* calloc(size_t elems, size_t bytes_each) {
@@ -32,6 +33,9 @@ void free(void* ptr) {
 
 void* realloc(void* old, size_t size) {
   void* ptr = malloc(size);
+  if (size > max_small_size()) {
+    size += sizeof(size_t);
+  }
   if (old != NULL) {
     size_t old_size = get_size(old);
     if (ptr != NULL) {
