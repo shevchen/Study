@@ -63,7 +63,6 @@ static int create_rope()
     if (i < buf_size) {
       rope* new_node = malloc(sizeof(rope));
       new_node->c = c;
-      new_node->size = 1;
       new_node->priority = rand();
       new_node->left = NULL;
       new_node->right = NULL;

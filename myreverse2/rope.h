@@ -5,7 +5,6 @@
 
 typedef struct rope {
   char c;
-  size_t size;
   int priority;
   struct rope *left, *right;
 } rope;
