@@ -19,9 +19,9 @@ typedef struct bucket_list {
   struct bucket_list* next;
 } bucket_list;
 
-void* get_memory(size_t);
-size_t get_hash(size_t);
-bucket_list* get_all_buckets(pid_t);
-size_t get_size(void*);
+void* get_memory(size_t len);
+size_t get_hash(size_t n);
+bucket_list* get_all_buckets(pid_t pid);
+size_t get_size(void* ptr);
 
 #endif

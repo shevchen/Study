@@ -9,7 +9,7 @@ typedef struct small_allocs {
   struct small_allocs* next;
 } small_allocs;
 
-small_bucket* find_small(void*);
-void* add_another_small(pid_t);
+small_bucket* find_small(void* ptr);
+void* add_another_small(pid_t pid);
 
 #endif

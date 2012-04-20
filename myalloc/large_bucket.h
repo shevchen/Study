@@ -11,7 +11,7 @@ typedef struct large_bucket {
   struct large_bucket* next;
 } large_bucket;
 
-void* add_large(size_t);
-void free_large(void*);
+void* add_large(size_t length);
+void free_large(void* ptr);
 
 #endif
