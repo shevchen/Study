@@ -16,15 +16,15 @@ static int create_rope()
     if (count <= 0) {
       return count;
     }
+    if (c == '\n') {
+      return i;
+    }
     rope* new_node = malloc(sizeof(rope));
     new_node->c = c;
     new_node->size = 1;
     new_node->priority = rand();
     new_node->left = NULL;
     new_node->right = NULL;
-    if (c == '\n') {
-      return i;
-    }
     root = merge(root, new_node);
   }
   return buf_size + 1;
@@ -66,8 +66,8 @@ int main() {
   srand(time(NULL));
   while (1) {
     int chars = create_rope();
-    if (chars <= 0) {
-      return chars;
+    if (chars  == -1) {
+      return -1;
     }
     if (chars <= buf_size) {
       if (print_rope() == -1) {
@@ -75,5 +75,8 @@ int main() {
       }
     }
     free_rope(root);
+    if (chars == 0) {
+      return 0;
+    }
   }
 }
