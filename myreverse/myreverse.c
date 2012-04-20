@@ -8,7 +8,7 @@ typedef struct
   int in_size, skip_next;
 } buf_t;
 
-int read_chars(buf_t* buf)
+static int read_chars(buf_t* buf)
 {
   int count = read(0, buf->in + buf->in_size, buf_size - buf->in_size);
   if (count > 0)
@@ -18,7 +18,7 @@ int read_chars(buf_t* buf)
   return count;
 }
 
-int write_chars(char* out, int len)
+static int write_chars(char* out, int len)
 {
   int pos = 0;
   while (pos < len)
@@ -33,7 +33,7 @@ int write_chars(char* out, int len)
   return 0;
 }
 
-int reverse(char* out, int len)
+static int reverse(char* out, int len)
 {
   int left = 0, right = len - 1;
   while (right >= 0 && (out[right] == '\n' || out[right] == '\r'))
@@ -50,7 +50,7 @@ int reverse(char* out, int len)
   return write_chars(out, len);
 }
 
-int process(buf_t* buf, int last)
+static int process(buf_t* buf, int last)
 {
   int pos = 0;
   int sz = buf->in_size;
