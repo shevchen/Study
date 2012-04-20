@@ -9,7 +9,7 @@ static int eof = 0;
 
 static int print(rope* n) {
   if (n == NULL) {
-    return;
+    return 0;
   }
   if (print(n->right) == -1) {
     return -1;
