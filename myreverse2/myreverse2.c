@@ -10,22 +10,15 @@ static int print(rope* n) {
   if (n == NULL) {
     return;
   }
-  char c = '[';
-  write(1, &c, 1);
   if (print(n->right) == -1) {
     return -1;
   }
-  c = ',';
-  write(1, &c, 1);
   if (write(1, &n->c, sizeof(char)) == -1) {
     return -1;
   }
-  write(1, &c, 1);
   if (print(n->left) == -1) {
     return -1;
   }
-  c = ']';
-  write(1, &c, 1);
   return 0;
 }
 
@@ -60,17 +53,16 @@ static int create_rope()
     rope* new_node = malloc(sizeof(rope));
     new_node->c = c;
     new_node->size = 1;
-    new_node->priority = c ^ (i + 1); //rand();
+    new_node->priority = rand();
     new_node->left = NULL;
     new_node->right = NULL;
     root = merge(root, new_node);
-    print_rope;
   }
   return buf_size + 1;
 }
 
 int main() {
-  //srand(time(NULL));
+  srand(time(NULL));
   while (1) {
     int chars = create_rope();
     if (chars  == -1) {

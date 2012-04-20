@@ -8,13 +8,11 @@ rope* merge(rope* left, rope* right) {
     return left;
   }
   if (right->priority > left->priority) {
-    right->right = merge(right->left, right->right);
-    right->left = left;
+    right->left = merge(left, right->left);
     right->size += left->size;
     return right;
   } else {
-    left->left = merge(left->left, left->right);
-    left->right = right;
+    left->right = merge(left->right, right);
     left->size += right->size;
     return left;
   }
