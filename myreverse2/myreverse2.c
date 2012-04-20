@@ -6,6 +6,44 @@
 
 static rope* root = NULL;
 
+static int print(rope* n) {
+  if (n == NULL) {
+    return;
+  }
+  char c = '[';
+  write(1, &c, 1);
+  if (print(n->right) == -1) {
+    return -1;
+  }
+  c = ',';
+  write(1, &c, 1);
+  if (write(1, &n->c, sizeof(char)) == -1) {
+    return -1;
+  }
+  write(1, &c, 1);
+  if (print(n->left) == -1) {
+    return -1;
+  }
+  c = ']';
+  write(1, &c, 1);
+  return 0;
+}
+
+static int print_rope() {
+  print(root);
+  char c = '\n';
+  return write(1, &c, sizeof c);
+}
+
+static void free_rope(rope* n) {
+  if (n == NULL) {
+    return;
+  }
+  free_rope(n->left);
+  free_rope(n->right);
+  free(n);
+}
+
 static int create_rope()
 {
   size_t i;
@@ -22,48 +60,17 @@ static int create_rope()
     rope* new_node = malloc(sizeof(rope));
     new_node->c = c;
     new_node->size = 1;
-    new_node->priority = rand();
+    new_node->priority = c ^ (i + 1); //rand();
     new_node->left = NULL;
     new_node->right = NULL;
     root = merge(root, new_node);
+    print_rope;
   }
   return buf_size + 1;
 }
 
-static int print(rope* n) {
-  if (n == NULL) {
-    return;
-  }
-  if (print(n->right) == -1) {
-    return -1;
-  }
-  if (n->c != 0) {
-    if (write(1, &n->c, sizeof(char)) == -1) {
-      return -1;
-    }
-  }
-  if (print(n->left) == -1) {
-    return -1;
-  }
-  return 0;
-}
-
-static int print_rope() {
-  print(root);
-  return write(1, '\n', sizeof '\n');
-}
-
-static void free_rope(rope* n) {
-  if (n == NULL) {
-    return;
-  }
-  free_rope(n->left);
-  free_rope(n->right);
-  free(n);
-}
-
 int main() {
-  srand(time(NULL));
+  //srand(time(NULL));
   while (1) {
     int chars = create_rope();
     if (chars  == -1) {
