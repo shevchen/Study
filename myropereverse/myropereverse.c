@@ -4,8 +4,10 @@
 
 #define buf_size 10
 
+static char buffer[buf_size];
 static rope* root = NULL;
-static int eof = 0;
+static size_t rope_size = 0;
+static int too_long = 0;
 
 static int print(rope* n) {
   if (n == NULL) {
@@ -23,7 +25,7 @@ static int print(rope* n) {
   return 0;
 }
 
-static int print_rope() {
+static int print_rope(int eof) {
   if (print(root) == -1) {
     return -1;
   }
@@ -34,39 +36,48 @@ static int print_rope() {
   return write(1, &c, sizeof c);
 }
 
-static void free_rope(rope* n) {
+static void free_nodes(rope* n) {
   if (n == NULL) {
     return;
   }
-  free_rope(n->left);
-  free_rope(n->right);
+  free_nodes(n->left);
+  free_nodes(n->right);
   free(n);
+}
+
+static void free_rope() {
+  free_nodes(root);
+  root = NULL;
+  rope_size = 0;
 }
 
 static int create_rope()
 {
+  int count = read(0, buffer, buf_size);
+  if (count <= 0) {
+    return count;
+  }
   size_t i;
-  char c;
-  root = NULL;
-  for (i = 0; ; ++i) {
-    int count = read(0, &c, sizeof c);
-    if (count == -1) {
-      return -1;
-    }
-    if (count == 0) {
-      eof = 1;
-      return i;
-    }
-    if (c == '\n') {
-      return i + 1;
-    }
-    if (i < buf_size) {
+  for (i = 0; i < count; ++i) {
+    if (buffer[i] == '\n') {
+      if (too_long) {
+        too_long = 0;
+      } else {
+        print_rope(0);
+        free_rope();
+      }
+    } else if (too_long) {
+    } else if (rope_size  + 1 >= buf_size) {
+      free_rope();
+      too_long = 1;
+    } else {
       rope* new_node = malloc(sizeof(rope));
-      new_node->c = c;
+      new_node->c = buffer[i];
       new_node->priority = rand();
       new_node->left = NULL;
       new_node->right = NULL;
       root = merge(root, new_node);
+      rope_size++;
     }
   }
 }
@@ -75,17 +86,12 @@ int main() {
   srand(time(NULL));
   while (1) {
     int chars = create_rope();
-    if (chars == -1) {
-      return -1;
-    }
-    if (chars <= buf_size) {
-      if (print_rope() == -1) {
-        return -1;
+    if (chars <= 0) {
+      if (chars == 0 && rope_size > 0) {
+        print_rope(1);
+        free_rope();
       }
-    }
-    free_rope(root);
-    if (eof) {
-      return 0;
+      return chars;
     }
   }
 }
