@@ -87,10 +87,10 @@ int main() {
   while (1) {
     int chars = create_rope();
     if (chars <= 0) {
-      if (chars == 0 && rope_size > 0) {
+      if (chars == 0) {
         print_rope(1);
-        free_rope();
       }
+      free_rope();
       return chars;
     }
   }
