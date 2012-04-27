@@ -50,6 +50,10 @@ void* memalign(size_t align, size_t size) {
   raise(SIGILL);
 }
 
+int posix_memalign(void** memptr, size_t align, size_t size) {
+  raise(SIGILL);
+}
+
 void* valloc(size_t size) {
   raise(SIGILL);
 }
