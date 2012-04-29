@@ -63,11 +63,14 @@ static int create_rope()
       if (too_long) {
         too_long = 0;
       } else {
-        print_rope(0);
+        int print = print_rope(0);
         free_rope();
+        if (print < 0) {
+          return print;
+        }
       }
     } else if (too_long) {
-    } else if (rope_size  + 1 >= buf_size) {
+    } else if (rope_size + 1 >= buf_size) {
       free_rope();
       too_long = 1;
     } else {
