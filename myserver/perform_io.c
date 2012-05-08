@@ -1,6 +1,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <poll.h>
+#include <pthread.h>
 #include "sock_io.h"
 
 typedef struct pollfd pollfd;
@@ -37,16 +38,12 @@ void perform_io() {
     size_t count;
     for (count = 0; count < nfds; ++count) {
       if (poll_list[i].revents & POLLIN) {
-        if (!fork()) {
-          exit(recv_message(poll_list[i].fd, info_list[i]));
-        }
+        recv_message(poll_list[i].fd, info_list[i]);
       }
     }
     for (count = 0; count < nfds; ++count) {
       if (poll_list[i].revents & POLLOUT) {
-        if (!fork()) {
-          exit(send_message(poll_list[i].fd, info_list[i]));
-        }
+        send_message(poll_list[i].fd, info_list[i]);
       }
     }
   }
