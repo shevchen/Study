@@ -1,15 +1,12 @@
-typedef struct message {
-  char* str;
-  size_t length;
-  size_t receivers;
-  struct message* next;
-} message;
+#ifndef SOCK_IO_H_
+#define SOCK_IO_H_
 
-typedef struct fdinfo {
-  message* messages;
-  struct fdinfo* next;
-} fdinfo;
+#include <unistd.h>
+#include <poll.h>
+#include "msg_queue.h"
 
-int recv_message(int fd, fdinfo* info);
+void recv_message(struct pollfd* all_polls, size_t id, msg_queue* all_msgs, size_t nfds);
 
-int send_message(int fd, fdinfo* info);
+void send_message(struct pollfd* poll, msg_queue* msgs);
+
+#endif
