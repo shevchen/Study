@@ -64,7 +64,7 @@ void send_message(struct pollfd* poll, msg_queue* msgs) {
         poll->events &= ~POLLOUT;
       }
     } else {
-      update_sent(msgs, bytes_sent);
+      update_sent_bytes(msgs, bytes_sent);
     }
   }
 }

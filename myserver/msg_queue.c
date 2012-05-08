@@ -31,7 +31,7 @@ message* get_message(msg_queue* queue, size_t* bytes_sent) {
   return queue->head->m;
 }
 
-void update_sent(msg_queue* queue, size_t bytes_sent) {
+void update_sent_bytes(msg_queue* queue, size_t bytes_sent) {
   if (queue->head == NULL) {
     return;
   }

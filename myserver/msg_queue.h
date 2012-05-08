@@ -24,7 +24,7 @@ void add_message(msg_queue* queue, message* m);
 
 message* get_message(msg_queue* queue, size_t* bytes_sent);
 
-void update_sent(msg_queue* queue, size_t bytes_sent);
+void update_sent_bytes(msg_queue* queue, size_t bytes_sent);
 
 void remove_message(msg_queue* queue);
 
