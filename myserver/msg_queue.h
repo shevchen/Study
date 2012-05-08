@@ -3,7 +3,7 @@
 
 #include <unistd.h>
 
-typedef struct message {
+typedef struct {
   char* str;
   size_t length;
   size_t receivers;
