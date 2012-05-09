@@ -36,6 +36,7 @@ int add_fd(int fd, struct sockaddr* addr, int len) {
 void perform_io() {
   while (1) {
     watch();
+    printf("Working...\n");
     int ready = poll(poll_list, nfds, MS_TIMEOUT);
     if (ready == -1) {
       printf("I/O error\n");

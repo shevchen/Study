@@ -13,7 +13,7 @@ void init(char* port) {
   if (!getaddrinfo(NULL, port, hints, &servinfo)) {
     struct addrinfo* cur = servinfo;
     while (cur != NULL) {
-      int fd = socket(cur->ai_family, cur->ai_socktype, cur->ai_protocol);
+      int fd = socket(cur->ai_family, cur->ai_socktype | SOCK_NONBLOCK, cur->ai_protocol);
       if (fd >= 0 && !bind(fd, cur->ai_addr, cur->ai_addrlen)) {
         printf("Binding socket (fd %d) on port %s\n", fd, port);
         add_my_socket(fd);
