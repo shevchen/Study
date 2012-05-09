@@ -12,7 +12,7 @@ static struct pollfd poll_list[MAX_FD];
 static msg_queue msgs[MAX_FD];
 static size_t nfds = 0;
 
-static const int MS_TIMEOUT = 15000;
+static const int MS_TIMEOUT = 500;
 
 static const char prefix[] = "Connection from ";
 
