@@ -1,7 +1,12 @@
 #ifndef PERFORM_IO_H_
 #define PERFORM_IO_H_
 
-int add_fd(int fd);
+#include <sys/types.h>
+#include <sys/socket.h>
+
+#define MAX_FD 65536
+
+int add_fd(int fd, struct sockaddr* addr, int len);
 
 void perform_io();
 
