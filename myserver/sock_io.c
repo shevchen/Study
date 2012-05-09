@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <poll.h>
 #include <string.h>
+#include <stdio.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include "msg_queue.h"
@@ -15,6 +16,7 @@ static int ignore = 0;
 void recv_message(struct pollfd* all_polls, size_t id, msg_queue* all_msgs, size_t nfds) {
   int bytes = recv(all_polls[id].fd, buffer, BUFFER_SIZE - buf_size, MSG_DONTWAIT);
   if (bytes > 0) {
+    printf("Received message at fd %d\n", all_polls[id].fd);
     size_t next_start = 0;
     size_t i;
     for (i = buf_size; i < buf_size + bytes; ++i) {
@@ -30,6 +32,7 @@ void recv_message(struct pollfd* all_polls, size_t id, msg_queue* all_msgs, size
           m->receivers = nfds;
           size_t j;
           for (j = 0; j < nfds; ++j) {
+            printf("Added message to the queue of fd %d\n", all_polls[j].fd);
             add_message(all_msgs + j, m);
             all_polls[j].events |= POLLOUT;
           }
@@ -53,6 +56,7 @@ void send_message(struct pollfd* poll, msg_queue* msgs) {
   message* m = get_message(msgs, &bytes_sent);
   int bytes = send(poll->fd, m->str + bytes_sent, m->length - bytes_sent, MSG_DONTWAIT);
   if (bytes > 0) {
+    printf("Sent message from fd %d\n", poll->fd);
     bytes_sent += bytes;
     if (bytes_sent == m->length) {
       remove_message(msgs);

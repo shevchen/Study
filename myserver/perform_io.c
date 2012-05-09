@@ -27,7 +27,8 @@ int add_fd(int fd, struct sockaddr* addr, int len) {
   msgs[nfds].head = NULL;
   msgs[nfds].tail = NULL;
   msgs[nfds].size = 0;
-  printf("Here I need to extract an IP address from addr and multicast it.");
+  printf("Accepted fd %d added\n", fd);
+  printf("Here I need to extract an IP address from addr and multicast it\n");
   ++nfds;
   return 0;
 }
@@ -37,7 +38,7 @@ void perform_io() {
     watch();
     int ready = poll(poll_list, nfds, MS_TIMEOUT);
     if (ready == -1) {
-      printf("I/O error.");
+      printf("I/O error\n");
       return;
     }
     if (ready == 0) {
@@ -46,11 +47,13 @@ void perform_io() {
     size_t count;
     for (count = 0; count < nfds; ++count) {
       if (poll_list[count].revents & POLLIN) {
+        printf("Receiving message at fd %d\n", poll_list[count].fd);
         recv_message(poll_list, count, msgs, nfds);
       }
     }
     for (count = 0; count < nfds; ++count) {
       if (poll_list[count].revents & POLLOUT) {
+        printf("Sending message from fd %d\n", poll_list[count].fd);
         send_message(&poll_list[count], msgs + count);
       }
     }

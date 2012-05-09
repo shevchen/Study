@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdio.h>
 #include <unistd.h>
 #include "msg_queue.h"
 
@@ -20,6 +21,7 @@ void add_message(msg_queue* queue, message* m) {
     queue->tail->prev = n;
     queue->tail = n;
   }
+  printf("Added message %s\n", m->str);
   ++(queue->size);
 }
     
@@ -44,6 +46,7 @@ void remove_message(msg_queue* queue) {
   }
   node* old = queue->head;
   queue->head = old->prev;
+  printf("Removed message %s\n", old->m->str);
   free(old);
   if (queue->head == NULL) {
     queue->tail = NULL;

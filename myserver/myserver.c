@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -14,6 +15,7 @@ void init(char* port) {
     while (cur != NULL) {
       int fd = socket(cur->ai_family, cur->ai_socktype, cur->ai_protocol); 
       if (fd >= 0 && !bind(fd, cur->ai_addr, cur->ai_addrlen)) {
+        printf("Binding socket (fd %d) on port %s\n", fd, port);
         add_my_socket(fd);
       }
       cur = cur->ai_next;
@@ -29,7 +31,7 @@ int main(int argc, char** argv) {
   hints->ai_socktype = SOCK_STREAM;
   hints->ai_flags = AI_PASSIVE;
   int i;
-  for (i = 0; i < argc; ++i) {
+  for (i = 1; i < argc; ++i) {
     init(argv[i]);
   }
   freeaddrinfo(servinfo);
