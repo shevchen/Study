@@ -32,8 +32,9 @@ int add_fd(int fd, struct sockaddr* addr, int len) {
 }
 
 void close_fd(size_t id) {
-  poll_list[id].events = 0;
   close(poll_list[id].fd);
+  poll_list[id].fd = -1;
+  poll_list[id].events = 0;
 }
 
 void perform_io() {
