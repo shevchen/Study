@@ -20,6 +20,7 @@ typedef struct {
   size_t size;
   message* part_written;
   int ignore, part_bytes;
+  int is_alive;
 } msg_queue;
 
 void add_message(msg_queue* queue, message* m);

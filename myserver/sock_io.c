@@ -12,17 +12,19 @@
 
 static char buffer[BUFFER_SIZE];
 
-static void send_all(struct pollfd* all_polls, msg_queue* all_msgs, size_t nfds, message* m) {
-  m->receivers = nfds;
-  size_t j;
-  for (j = 0; j < nfds; ++j) {
-    printf("Added message to the queue of fd %d\n", all_polls[j].fd);
-    add_message(all_msgs + j, m);
-    all_polls[j].events |= POLLOUT;
+void send_all(struct pollfd* all_polls, msg_queue* all_msgs, size_t nfds, size_t nfds_alive, message* m) {
+  m->receivers = nfds_alive;
+  size_t i;
+  for (i = 0; i < nfds; ++i) {
+    if (all_msgs[i].is_alive) {
+      printf("Added message to the queue of fd %d\n", all_polls[i].fd);
+      add_message(all_msgs + i, m);
+      all_polls[i].events |= POLLOUT;
+    }
   }
 }
 
-void recv_message(struct pollfd* all_polls, size_t id, msg_queue* all_msgs, size_t nfds) {
+void read_message(struct pollfd* all_polls, size_t id, msg_queue* all_msgs, size_t nfds, size_t nfds_alive) {
   int bytes = recv(all_polls[id].fd, buffer, BUFFER_SIZE, MSG_DONTWAIT);
   if (bytes == 0) {
     close_fd(id);
@@ -43,7 +45,7 @@ void recv_message(struct pollfd* all_polls, size_t id, msg_queue* all_msgs, size
             m->str = realloc(m->str, full_size);
             memcpy(m->str + queue->part_bytes, buffer + next_start, len);
             m->length = full_size;
-            send_all(all_polls, all_msgs, nfds, m);
+            send_all(all_polls, all_msgs, nfds, nfds_alive, m);
           } else {
             free(m->str);
             free(m);
@@ -56,7 +58,7 @@ void recv_message(struct pollfd* all_polls, size_t id, msg_queue* all_msgs, size
           m->length = len;
           m->str = malloc(len);
           memcpy(m->str, buffer + next_start, len);
-          send_all(all_polls, all_msgs, nfds, m);
+          send_all(all_polls, all_msgs, nfds, nfds_alive, m);
         }
         next_start = i + 1;
       }
@@ -78,7 +80,7 @@ void recv_message(struct pollfd* all_polls, size_t id, msg_queue* all_msgs, size
   }
 }
 
-void send_message(struct pollfd* poll, msg_queue* msgs) {
+void print_message(struct pollfd* poll, msg_queue* msgs) {
   size_t bytes_sent;
   message* m = get_message(msgs, &bytes_sent);
   int bytes = send(poll->fd, m->str + bytes_sent, m->length - bytes_sent, MSG_DONTWAIT);
