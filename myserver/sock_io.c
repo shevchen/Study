@@ -88,9 +88,11 @@ void send_message(struct pollfd* poll, msg_queue* msgs) {
     if (bytes_sent == m->length) {
       remove_message(msgs);
       if (--(m->receivers) == 0) {
+        printf("Freeing message\n");
         free(m->str);
         free(m);
       }
+      printf("Receivers left: %d\n", m->receivers);
       if (msgs->size == 0) {
         poll->events &= ~POLLOUT;
       }

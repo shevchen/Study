@@ -6,7 +6,7 @@
 
 #define MAX_FD 65536
 
-int add_fd(int fd, struct sockaddr* addr, int len);
+int add_fd(int fd, struct sockaddr* saddr, int len);
 
 void close_fd(size_t id);
 
