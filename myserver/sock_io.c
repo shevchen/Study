@@ -6,6 +6,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include "msg_queue.h"
+#include "perform_io.h"
 
 #define BUFFER_SIZE 21
 
@@ -23,6 +24,10 @@ static void send_all(struct pollfd* all_polls, msg_queue* all_msgs, size_t nfds,
 
 void recv_message(struct pollfd* all_polls, size_t id, msg_queue* all_msgs, size_t nfds) {
   int bytes = recv(all_polls[id].fd, buffer, BUFFER_SIZE, MSG_DONTWAIT);
+  if (bytes == 0) {
+    close_fd(id);
+    return;
+  }
   if (bytes > 0) {
     printf("Received message %s at fd %d\n", buffer, all_polls[id].fd);
     size_t next_start = 0;

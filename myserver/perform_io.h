@@ -8,6 +8,8 @@
 
 int add_fd(int fd, struct sockaddr* addr, int len);
 
+void close_fd(size_t id);
+
 void perform_io();
 
 #endif
