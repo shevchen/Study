@@ -23,10 +23,8 @@ int add_fd(int fd, struct sockaddr* addr, int len) {
   }
   poll_list[nfds].fd = fd;
   poll_list[nfds].events = POLLIN;
-  msgs[nfds] = *((msg_queue*)malloc(sizeof(msg_queue)));
-  msgs[nfds].head = NULL;
-  msgs[nfds].tail = NULL;
-  msgs[nfds].size = 0;
+  msgs[nfds] = *(msg_queue*)malloc(sizeof(msg_queue));
+  memset(&msgs[nfds], 0, sizeof(msg_queue));
   printf("Accepted fd %d added\n", fd);
   printf("Here I need to extract an IP address from addr and multicast it\n");
   ++nfds;

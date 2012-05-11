@@ -18,6 +18,8 @@ typedef struct node {
 typedef struct {
   node *head, *tail;
   size_t size;
+  message* part_written;
+  int ignore, part_bytes;
 } msg_queue;
 
 void add_message(msg_queue* queue, message* m);
