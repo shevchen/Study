@@ -31,7 +31,7 @@ void read_message(struct pollfd* all_polls, size_t id, msg_queue* all_msgs, size
     return;
   }
   if (bytes > 0) {
-    printf("Received message %s at fd %d\n", buffer, all_polls[id].fd);
+    printf("Received message at fd %d\n", all_polls[id].fd);
     size_t next_start = 0;
     size_t i;
     msg_queue* queue = all_msgs + id;
@@ -64,10 +64,18 @@ void read_message(struct pollfd* all_polls, size_t id, msg_queue* all_msgs, size
       }
     }
     if (next_start < bytes && !queue->ignore) {
+      size_t len = bytes - next_start;
       if (queue->part_bytes != 0) {
-        queue->ignore = 1;
+        if (queue->part_bytes + len > BUFFER_SIZE) {
+          queue->ignore = 1;
+        } else {
+          message* m = queue->part_written;
+          m->str = realloc(m->str, m->length + len);
+          memcpy(m->str + m->length, buffer + next_start, len);
+          m->length += len;
+          queue->part_bytes += len;
+        }
       } else {
-        size_t len = bytes - next_start;
         message* m = (message*)malloc(sizeof(message));
         m->length = len;
         m->str = malloc(len);
