@@ -21,35 +21,37 @@ static const int MS_TIMEOUT = 500;
 static const char* prefix = "Connection from ";
 static char ip[MAX_IP_LENGTH];
 
-int add_fd(int fd, struct sockaddr* saddr, int len) {
+int add_fd(int fd, struct sockaddr* addr, int len) {
   if (nfds == MAX_FD) {
     printf("Too many file descriptors.");
     return -1;
   }
-  char* addr = (char*)saddr;
+  if (addr->sa_family == AF_INET) {
+    struct sockaddr_in* sa = (struct sockaddr_in*)addr;
+    inet_ntop(AF_INET, &(sa->sin_addr), ip, MAX_IP_LENGTH);
+  } else if (addr->sa_family == AF_INET6) {
+    struct sockaddr_in6* sa = (struct sockaddr_in6*)addr;
+    inet_ntop(AF_INET6, &(sa->sin6_addr), ip, MAX_IP_LENGTH);
+  } else {
+    printf("Socket family is not supported\n");
+    return -1;
+  }
   poll_list[nfds].fd = fd;
   poll_list[nfds].events = POLLIN;
   msgs[nfds] = *(msg_queue*)malloc(sizeof(msg_queue));
   memset(&msgs[nfds], 0, sizeof(msg_queue));
   msgs[nfds].is_alive = 1;
-  printf("Accepted fd %d added\n", fd);
-  message* m = (message*)malloc(sizeof(message));
-  if ((u_char)*(addr + sizeof(u_char)) == AF_INET) {
-    struct sockaddr_in* sa = (struct sockaddr_in*)addr;
-    inet_ntop(AF_INET, &(sa->sin_addr), ip, MAX_IP_LENGTH);
-  } else {
-    struct sockaddr_in6* sa = (struct sockaddr_in6*)addr;
-    inet_ntop(AF_INET6, &(sa->sin6_addr), ip, MAX_IP_LENGTH);
-  }
+  printf("Accepted fd %d has been added\n", fd);
   size_t ip_len = strlen(ip);
   ip[ip_len++] = '\n';
   size_t pref_len = strlen(prefix);
+  message* m = (message*)malloc(sizeof(message));
   m->str = malloc(pref_len + ip_len);
   memcpy(m->str, prefix, pref_len);
   memcpy(m->str + pref_len, ip, ip_len);
   m->length = pref_len + ip_len;
   m->receivers = nfds_alive;
-  printf("Here I extract an IP address from addr and multicast it\n");
+  printf("Multicasting IP address\n");
   send_all(poll_list, msgs, nfds, nfds_alive, m);
   ++nfds;
   ++nfds_alive;

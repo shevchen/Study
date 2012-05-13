@@ -26,7 +26,7 @@ int add_my_socket(int fd) {
 void watch() {
   size_t i;
   struct sockaddr* addr = (struct sockaddr*)malloc(sizeof(struct sockaddr));
-  int len = 0;
+  int len = sizeof(struct sockaddr);
   for (i = 0; i < my_sock_num; ++i) {
     int new_fd = accept(my_sockets[i], addr, &len);
     if (new_fd >= 0) {
